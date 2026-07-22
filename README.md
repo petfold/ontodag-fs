@@ -12,7 +12,7 @@ concept lattice instead of flat attributes, and content-addressed storage
 instead of a local disk.
 
 ```console
-$ ontodag-fs tree /
+$ odag-fs tree /
 /
 ├── animal/
 │   ├── dog/
@@ -53,10 +53,14 @@ one object, several true names.
 ## Quick start
 
 ```console
-$ pip install git+https://github.com/petfold/ontodag-fs.git
-$ ontodag-fs -s swarm:my-store tree /        # browse a Swarm-backed store
-$ ontodag-fs -s swarm:my-store cat /pet/dog/rex.txt
-$ pip install fusepy && ontodag-fs -s swarm:my-store mount ~/mnt
+$ pip install \
+    "ontodag[swarm] @ git+https://github.com/petfold/ontodag.git" \
+    "swarmfs @ git+https://github.com/petfold/swarmfs.git" \
+    "ontodag-fs @ git+https://github.com/petfold/ontodag-fs.git"
+$ odag-fs set store swarm:my-store     # once — the same setting odag uses
+$ odag-fs tree /
+$ odag-fs cat /pet/dog/rex.txt
+$ pip install fusepy && odag-fs mount ~/mnt
 ```
 
 New here? Read the **[User Guide](docs/USER_GUIDE.md)** — a tutorial that

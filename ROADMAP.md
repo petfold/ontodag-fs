@@ -49,8 +49,8 @@ mounting path ontodag-fs will reuse.
 
 ## v1 — workflow layer
 
-- CLI: `ontodag-fs file <ref|path> <concept-path>`, `ontodag-fs import
-  <tree> --provenance TAG` (SPEC §5), `ontodag-fs mount`.
+- CLI: `odag-fs file <ref|path> <concept-path>`, `odag-fs import
+  <tree> --provenance TAG` (SPEC §5), `odag-fs mount`.
 - `/.unfiled/` management; label rename.
 - xattr exposure of intents (if fsspec's FUSE path allows; else document as
   needing the dedicated FUSE layer).
@@ -70,7 +70,7 @@ surface — it all arrives through the injected ConceptIndex / bytestore.
   + private overlay on disk; all writes routed to the overlay; base
   refresh = re-hydrate + re-merge. Whiteouts (retracting base facts)
   deferred.
-- **workflow (v1+ here)**: `ontodag-fs publish` — promote overlay
+- **workflow (v1+ here)**: `odag-fs publish` — promote overlay
   assertions to the shared base, uploading referenced local bytes to Swarm
   *first* (DESIGN_DECISIONS #16: nothing shared may dangle).
 

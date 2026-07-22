@@ -24,7 +24,7 @@ dev = [
 ontodag = "ontodag_fs.fs:OntoDAGFileSystem"
 
 [project.scripts]
-ontodag-fs = "ontodag_fs.__main__:main"
+odag-fs = "ontodag_fs.__main__:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

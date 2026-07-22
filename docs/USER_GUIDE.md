@@ -72,8 +72,7 @@ $ pip install \
     "ontodag-fs @ git+https://github.com/petfold/ontodag-fs.git"
 ```
 
-This gives you three commands: `odag` (edit the ontology), `ontodag-fs`
-(browse it as a filesystem), and — after `pip install fusepy` — the ability
+This gives you three commands: `odag` (edit the ontology), `odag-fs` (browse it as a filesystem), and — after `pip install fusepy` — the ability
 to FUSE-mount it.
 
 Tell the tools where Bee is (only needed if not the default):
@@ -98,6 +97,12 @@ odag at a named, Swarm-backed store:
 ```console
 $ odag set store swarm:recipes
 ```
+
+`odag` and `odag-fs` share this setting (one config, `~/.ontodag/config`),
+so every command in the rest of this guide — editing *and* browsing —
+needs no store flag. (`odag-fs set store …` works identically; a one-off
+override is `-s STORE`; with nothing configured, both default to a local
+store in `~/.ontodag`.)
 
 Now build a little category tree. `odag put child parent1 parent2 ...`;
 no parents means top-level:
@@ -168,7 +173,7 @@ $ python3 file_it.py recipes brownie.md  dessert vegetarian
 ### Step 3 — browse
 
 ```console
-$ ontodag-fs -s swarm:recipes tree /
+$ odag-fs tree /
 /
 ├── .all/
 ├── .swarm/
@@ -229,14 +234,14 @@ this in §5.
 Read a file, ask about a directory or a file:
 
 ```console
-$ ontodag-fs -s swarm:recipes cat /italian/dessert/tiramisu.md
-$ ontodag-fs -s swarm:recipes info /vegetarian/main
+$ odag-fs cat /italian/dessert/tiramisu.md
+$ odag-fs info /vegetarian/main
 name: /vegetarian/main
 size: 0
 type: directory
 intent: ['main', 'recipe', 'vegetarian']
 
-$ ontodag-fs -s swarm:recipes info /vegetarian/main/caprese.md
+$ odag-fs info /vegetarian/main/caprese.md
 name: /vegetarian/main/caprese.md
 size: 73
 type: file
@@ -253,7 +258,7 @@ intent: ['italian', 'main', 'recipe', 'vegetarian']
 ```console
 $ pip install fusepy
 $ mkdir -p ~/recipes
-$ ontodag-fs -s swarm:recipes mount ~/recipes
+$ odag-fs mount ~/recipes
 ```
 
 In another terminal it's now just a filesystem — use anything:
@@ -277,10 +282,10 @@ Unmount with `Ctrl-C` or `fusermount -u ~/recipes`.
 and they are all the same single object:
 
 ```console
-$ ontodag-fs -s swarm:recipes cat /italian/vegetarian/caprese.md
-$ ontodag-fs -s swarm:recipes cat /vegetarian/italian/caprese.md   # order-free
-$ ontodag-fs -s swarm:recipes cat /recipe/caprese.md               # implied parent
-$ ontodag-fs -s swarm:recipes cat /main/vegetarian/italian/recipe/caprese.md  # redundancy is harmless
+$ odag-fs cat /italian/vegetarian/caprese.md
+$ odag-fs cat /vegetarian/italian/caprese.md   # order-free
+$ odag-fs cat /recipe/caprese.md               # implied parent
+$ odag-fs cat /main/vegetarian/italian/recipe/caprese.md  # redundancy is harmless
 ```
 
 ### Narrowing: paths are AND-queries
@@ -289,7 +294,7 @@ Each path segment narrows the result. Where does the vegetarian Italian
 food live? Just say so:
 
 ```console
-$ ontodag-fs -s swarm:recipes ls /italian/vegetarian
+$ odag-fs ls /italian/vegetarian
 .all/
 caprese.md
 ```
@@ -304,7 +309,7 @@ belong exactly at the current level. When you want *everything at or below*
 a query — for a search, a backup, a batch job — every directory has `.all/`:
 
 ```console
-$ ontodag-fs -s swarm:recipes ls /recipe/.all
+$ odag-fs ls /recipe/.all
 brownie.md  caprese.md  ramen.md  tiramisu.md
 $ grep -l basil ~/recipes/.all/*            # the whole store, one flat dir
 ```
@@ -325,7 +330,7 @@ Where the two meet in the same listing, each gets a short content-hash
 suffix — deterministic, and always resolvable:
 
 ```console
-$ ontodag-fs -s swarm:recipes ls /.all
+$ odag-fs ls /.all
 brownie.md
 caprese.md
 notes~22bc67dd.md
@@ -333,14 +338,14 @@ notes~d3eae922.md
 pasta.md
 ramen.md
 tiramisu.md
-$ ontodag-fs -s swarm:recipes cat /.all/notes~22bc67dd.md
+$ odag-fs cat /.all/notes~22bc67dd.md
 shopping: mascarpone, savoiardi
 ```
 
 Where a name is unambiguous, it stays plain:
 
 ```console
-$ ontodag-fs -s swarm:recipes ls /japanese     # only one notes.md here
+$ odag-fs ls /japanese     # only one notes.md here
 .all/
 main/
 recipe/
@@ -358,7 +363,7 @@ $ python3 file_it.py recipes pasta.md italian
 filed pasta.md as ['italian'] -> a96276cc24bbeaae…
 $ python3 file_it.py recipes pasta.md vegetarian     # same bytes!
 filed pasta.md as ['vegetarian'] -> a96276cc24bbeaae…    # same reference
-$ ontodag-fs -s swarm:recipes info /italian/pasta.md | grep intent
+$ odag-fs info /italian/pasta.md | grep intent
 intent: ['italian', 'vegetarian']                    # one object, both facets
 ```
 
@@ -369,9 +374,9 @@ in `info`, and usable directly through the `/.swarm/` namespace, even for
 content nobody has classified yet:
 
 ```console
-$ ontodag-fs -s swarm:recipes info /japanese/ramen.md | grep swarm_ref
+$ odag-fs info /japanese/ramen.md | grep swarm_ref
 swarm_ref: c76d86370de23d5f…               # this IS the file's checksum
-$ ontodag-fs -s swarm:recipes cat /.swarm/c76d86370de23d5f…<full 64 hex>
+$ odag-fs cat /.swarm/c76d86370de23d5f…<full 64 hex>
 # Shoyu Ramen
 …
 ```
@@ -434,7 +439,7 @@ with fs.open("/measurements/2026/data.csv") as f:
 |---|---|
 | `no usable postage stamp` / `PermissionError` on filing | No valid stamp on your node. Buy one; set `BEE_BATCH`. Reads never need a stamp. |
 | `Connection refused` to `localhost:1633` | Bee isn't running (or is elsewhere — set `BEE_API`). |
-| `ontodag-fs mount` says it needs fusepy | `pip install fusepy` (plus the OS `libfuse` package, e.g. `apt install fuse3`). |
+| `odag-fs mount` says it needs fusepy | `pip install fusepy` (plus the OS `libfuse` package, e.g. `apt install fuse3`). |
 | `tree /` shows only `.all/`, `.swarm/`, `.unfiled/` | The store has categories but no *filed objects* — directories appear when there is something to refine. File something (§3 step 2). |
 | `not found` for a path you expect | Category name typo (unknown categories are `ENOENT`), or the file's label collides in that listing — check for the `name~hash` form with `ls`. |
 | Filed something, old listing shows | Listings cache briefly (30 s TTL) for out-of-band edits; your own writes through one process invalidate instantly. |
@@ -467,7 +472,7 @@ DESIGN_DECISIONS #19 for exactly how and why they differ.)*
   and classifies in one step; `rm` retracts; `mv` reclassifies; filing
   existing Swarm content by reference (`/.swarm/<ref>` → concept dir)
   without re-uploading.
-- **v1 — workflow tools**: `ontodag-fs import <folder>` (turn a directory
+- **v1 — workflow tools**: `odag-fs import <folder>` (turn a directory
   tree into classifications, with provenance tags for later cleanup), label
   renaming, `/.unfiled/` management, and classification visible as extended
   attributes (`getfattr`).

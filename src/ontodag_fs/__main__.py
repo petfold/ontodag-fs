@@ -1,14 +1,18 @@
 """Thin browse CLI for the v0 manual milestone (the full CLI is ROADMAP v1).
 
 Loads a DAG through odag's store machinery — the same store specs odag
-uses: a path to a native/OWL file, or ``swarm:NAME`` (default: odag's
-configured store) — wraps it in OntoDAGIndex, and serves it read-only
-with OntoDAGFileSystem over swarmfs.
+uses: a path to a native/OWL file, or ``swarm:NAME`` — and serves it
+read-only with OntoDAGFileSystem over swarmfs.
 
-    python -m ontodag_fs [-s STORE] [--bee-api URL] COMMAND ...
+    odag-fs [-s STORE] [--bee-api URL] COMMAND ...
 
-Commands: ls, tree, cat, info, mount. ``mount`` uses fsspec's generic
-FUSE wrapper (needs fusepy; deployment mode, not architecture).
+Commands: ls, tree, cat, info, mount, set. ``set`` reads and writes the
+same ``~/.ontodag/config`` as odag (keys: store, bee_api, bee_batch), so
+``odag set store swarm:NAME`` and ``odag-fs set store swarm:NAME`` are
+interchangeable and every command needs no ``-s`` once a default store is
+set. With nothing configured the default is the local ``~/.ontodag``
+store. ``mount`` uses fsspec's generic FUSE wrapper (needs fusepy;
+deployment mode, not architecture).
 """
 
 from __future__ import annotations
@@ -22,14 +26,14 @@ def _build_fs(store_spec: str | None, bee_api: str | None):
     # odag's CLI module is the authority on store specs/config; reusing its
     # (private) helpers is accepted milestone tooling — the real CLI (v1)
     # gets a public seam.
-    from ontodag.__main__ import _make_backend, _resolve_store
+    from ontodag.__main__ import _make_backend, _read_config, _resolve_store
 
     from swarmfs import SwarmFileSystem
 
     from . import OntoDAGFileSystem, OntoDAGIndex
 
     dag = _make_backend(_resolve_store(store_spec)).load()
-    api = bee_api or os.environ.get("BEE_API")
+    api = bee_api or os.environ.get("BEE_API") or _read_config().get("bee_api")
     swarm = SwarmFileSystem(api_url=api) if api else SwarmFileSystem()
     return OntoDAGFileSystem(index=OntoDAGIndex(dag), swarm=swarm)
 
@@ -85,23 +89,62 @@ def cmd_mount(fs, args) -> None:
     try:
         from fsspec.fuse import run
     except ImportError:
-        sys.exit("ontodag-fs mount needs fusepy: pip install fusepy")
+        sys.exit("odag-fs mount needs fusepy: pip install fusepy")
     print(f"mounting ontodag view at {args.mountpoint} — Ctrl-C or "
           f"`fusermount -u {args.mountpoint}` to unmount")
     run(fs, "/", args.mountpoint)
 
 
+def cmd_set(args) -> None:
+    """Show or change settings — same keys and config file as odag's `set`
+    (~/.ontodag/config), so either tool's `set store` configures both."""
+    from ontodag.__main__ import (
+        _SETTINGS,
+        _normalize_spec,
+        _read_config,
+        _resolve_store,
+        _write_config,
+    )
+
+    def effective(key: str) -> str:
+        cfg = _read_config()
+        if key == "store":
+            return _resolve_store(None)
+        if key == "bee_api":
+            return os.environ.get("BEE_API") or cfg.get("bee_api") or "http://localhost:1633"
+        if key == "bee_batch":
+            return os.environ.get("BEE_BATCH") or cfg.get("bee_batch") or ""
+        return cfg.get(key, "")
+
+    if not args.key:
+        for key in _SETTINGS:
+            print(f"{key} = {effective(key)}")
+        return
+    if args.key not in _SETTINGS:
+        sys.exit(f"odag-fs: unknown setting: {args.key} "
+                 f"(known: {', '.join(_SETTINGS)})")
+    if args.value is None:
+        print(f"{args.key} = {effective(args.key)}")
+        return
+    cfg = _read_config()
+    cfg[args.key] = _normalize_spec(args.value) if args.key == "store" else args.value
+    _write_config(cfg)
+
+
 def main(argv=None) -> None:
     parser = argparse.ArgumentParser(
-        prog="ontodag-fs",
-        description="Browse an OntoDAG concept lattice as a filesystem (read-only, v0).",
+        prog="odag-fs",
+        description="Browse an OntoDAG concept lattice as a filesystem "
+                    "(read-only, v0). Settings are shared with odag: "
+                    "`odag-fs set store swarm:NAME` makes -s unnecessary.",
     )
     parser.add_argument("-s", "--store", default=None,
-                        help="odag store spec: a file path or swarm:NAME "
-                             "(default: odag's configured store)")
+                        help="one-off store override: a file path or "
+                             "swarm:NAME (default: the configured store; "
+                             "see `odag-fs set`)")
     parser.add_argument("--bee-api", default=None,
-                        help="Bee API URL for the bytestore (default: $BEE_API "
-                             "or swarmfs's default)")
+                        help="Bee API URL for the bytestore (default: "
+                             "$BEE_API, configured bee_api, or localhost)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("ls", help="list a concept directory")
@@ -126,14 +169,21 @@ def main(argv=None) -> None:
     p.add_argument("mountpoint")
     p.set_defaults(func=cmd_mount)
 
+    p = sub.add_parser("set", help="show or change settings (shared with odag)")
+    p.add_argument("key", nargs="?")
+    p.add_argument("value", nargs="?")
+
     args = parser.parse_args(argv)
+    if args.command == "set":
+        cmd_set(args)
+        return
     fs = _build_fs(args.store, args.bee_api)
     try:
         args.func(fs, args)
     except FileNotFoundError as exc:
-        sys.exit(f"ontodag-fs: not found: {exc}")
+        sys.exit(f"odag-fs: not found: {exc}")
     except IsADirectoryError as exc:
-        sys.exit(f"ontodag-fs: is a directory: {exc}")
+        sys.exit(f"odag-fs: is a directory: {exc}")
 
 
 if __name__ == "__main__":
