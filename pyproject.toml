@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ontodag-fs"
+version = "0.0.1"
+description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
+requires-python = ">=3.11"
+dependencies = [
+    "fsspec",
+    "ontodag",
+    "swarmfs",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "hypothesis",
+]
+
+[project.entry-points."fsspec.specs"]
+ontodag = "ontodag_fs.fs:OntoDAGFileSystem"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "fuse: FUSE integration tests (require libfuse; skipped by default)",
+]
+addopts = "-m 'not fuse'"
