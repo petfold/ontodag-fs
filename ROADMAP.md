@@ -47,6 +47,25 @@ mounting path ontodag-fs will reuse.
 - xattr exposure of intents (if fsspec's FUSE path allows; else document as
   needing the dedicated FUSE layer).
 
+## Storage tiers and overlay (work in dependency repos; see DESIGN_DECISIONS #14–16)
+
+Sequenced by need, not version-pinned. None of it changes ontodag-fs's
+surface — it all arrives through the injected ConceptIndex / bytestore.
+
+- **swarmfs**: public raw-reference read API (`read_reference`/
+  `reference_size`) replacing ontodag-fs's use of the private
+  `_read_reference`; then a disk bytestore (content-addressed directory
+  keyed by BMT references, computed offline) behind the same interface.
+- **recordstore**: local-directory backend with the same record format as
+  the Swarm backend.
+- **ontodag**: layered DAG — shared base hydrated from Swarm (read-only)
+  + private overlay on disk; all writes routed to the overlay; base
+  refresh = re-hydrate + re-merge. Whiteouts (retracting base facts)
+  deferred.
+- **workflow (v1+ here)**: `ontodag-fs publish` — promote overlay
+  assertions to the shared base, uploading referenced local bytes to Swarm
+  *first* (DESIGN_DECISIONS #16: nothing shared may dangle).
+
 ## Later, only if earned by usage
 
 - `mkdir`/`rmdir` as concept creation/removal with deliberate intent semantics.

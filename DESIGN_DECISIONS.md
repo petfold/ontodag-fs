@@ -115,6 +115,42 @@ authoritative for anything.
     The Protocol is the dependency-injection seam SPEC §3 already requires
     for testing.
 
+14. **Storage tiers: memory / disk / Swarm; "local" means disk**
+    (decided 2026-07-22). Memory is the test/dev tier only (plain in-memory
+    OntoDAG, fake Swarm client) and never grows persistence features. The
+    real local option is disk: a local bytestore as a content-addressed
+    directory, and DAG persistence via a recordstore backend writing to a
+    local directory. Hard condition: **a local bytestore must use Swarm's
+    own content addressing (BMT references, computable offline via
+    swarmfs's bmt.py)** — identity must be location-independent, so moving
+    bytes to Swarm later changes no object's identity. A local store keyed
+    by any other hash would create a second identity namespace and violate
+    hard rule 1. All of this lives in the dependencies (swarmfs,
+    recordstore/ontodag), never in this repo.
+15. **Flagship DAG configuration: shared base ontology on Swarm + private
+    overlay on disk** (decided 2026-07-22). A layered DAG in *ontodag*
+    hydrates the shared base read-only, keeps the private DAG on disk
+    (same record format, recordstore disk backend), and presents the
+    merged view through the same interface — ontodag-fs receives a
+    ConceptIndex and never knows it's layered. Write routing: the base is
+    immutable through the layer; every mutation (filed objects, new
+    attributes/concepts) lands in the overlay. Retracting *base*-asserted
+    facts needs whiteout records — **deferred**; overlay-only retraction
+    ships first. Base refresh = re-hydrate + re-merge (a rebase); default
+    policy for attributes the base dropped: they survive as overlay-local,
+    flagged. Amplifies the known polysemy problem slightly; the existing
+    answer (provenance tagging + mdl-fca cleanup) applies unchanged.
+16. **The dangling-share configuration (shared DAG on Swarm + local-only
+    bytes) is avoided by construction, not supported** (decided
+    2026-07-22). Private classifications live in the disk overlay next to
+    possibly-local bytes — consistent because both are private. The shared
+    base only gains assertions through a deliberate publish, and
+    **publishing an assertion requires the referenced bytes to be on Swarm
+    first** (bytes, then assertion). Nothing shared may ever reference
+    unpublished bytes; the TMSU "references cannot dangle" advantage is
+    thereby preserved for every reader of the shared DAG, not just the
+    author.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context
