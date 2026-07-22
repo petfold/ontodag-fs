@@ -176,19 +176,53 @@ authoritative for anything.
   under FUSE.
 - **OR/NOT queries**: OR permanently rejected *in path syntax*; a query API
   outside path syntax (CLI or fsspec method) may come later.
-- **Single-object tails produce dead-end directories** (surfaced by the v0
-  manual milestone, 2026-07-22). With rex.txt filed under `dog ⊂ {animal,
-  pet}` as the only pet, `/animal/pet/` lists nothing but `.all/`: the
-  `dog` child is skipped (identical extent), and rex is not an
-  object-concept member of `{animal,pet}` under *implication*-closure
-  (its concept adds `dog`). Under true FCA (extent-driven) closure,
-  closure({animal,pet}) would *include* `dog` — the two concepts are the
-  same formal concept — and rex would be listed. So the current behavior
-  comes from implementing SPEC §1's "FCA closure" as DAG-implication
-  closure only. Candidate remedies to judge with more usage: (a)
-  extent-driven closure for resolution/objects_at (FCA-pure, minimal
-  listings, but paths acquire extent-implied attributes in their shown
-  intent); (b) don't skip identical-extent children (no dead ends, but
-  Tagsistant-style deep chains); (c) accept it — `.all/` always shows the
-  objects. The object is always reachable (typed path, `.all/`) and is
-  listed plainly at its object concept, so invariants hold either way.
+- **Dead-end directories from mixing the two closures** (surfaced by the
+  v0 manual milestone, 2026-07-22; analysis expanded same day). With
+  rex.txt filed under `dog ⊂ {animal, pet}` as the only pet,
+  `/animal/pet/` lists nothing but `.all/`: the `dog` child is skipped
+  (identical extent), and rex is not an object-concept member of
+  `{animal, pet}` under implication-closure (his concept adds `dog`).
+
+  Root cause: two closure operators disagree exactly when data is thin.
+  *Implication closure* (DAG ancestors) is what the ontology asserts —
+  stable under filing; it is what `closure()` implements and the right
+  basis for paths-as-assertions and (v0.1) writes. *Formal FCA closure*
+  (`intent(extent(A))`) is what the current population exhibits — under
+  it, `{animal, pet}` closes to `{animal, pet, dog}` (same formal
+  concept) and rex would be listed. The listing policy prunes
+  directories *extensionally* (identical-extent skip) but admits files
+  *intensionally* (closed-intent equality); the dead end is the gap
+  between the two, and it fires whenever `extent(A) = extent(A ∪ {b})`
+  for unimplied `b` — i.e., in locally homogeneous data, the dominant
+  regime for young and personal ontologies.
+
+  Options weighed: (a) extensional closure for resolution — FCA-pure and
+  matches SPEC §1's letter, but rejected: it would poison the write path
+  (filing a goldfish at `/pet` while all pets are dogs would assert
+  `dog`), or force split read/write path semantics; shown intents would
+  also fluctuate with the population. (b) stop skipping identical-extent
+  children — no dead ends, purely a listing change, but re-creates the
+  one-child corridor noise (`/photo/raw/2026/…`) the hybrid policy
+  exists to avoid. (c) **coverage rule — RECOMMENDED**: keep directories
+  as they are; redefine listing rule 2 as *files at C = members of
+  extent(C) whose intent contains no listed child attribute* (i.e., the
+  listing must cover the extent: everything at or below C is inside a
+  shown subdirectory or a file right here). Fixes exactly the
+  pathological case and nothing else; object-concept members remain
+  listed as today; coverage test is `o.intent ∩ shown_children ≠ ∅` (no
+  extra extent queries; `children()` already enumerates the extent);
+  write-path semantics untouched. Trade-off accepted: an object's
+  *display position* is population-dependent (rex shows at `/animal/pet`
+  until a cat is filed and `dog/` starts refining) — correct for a live
+  view; reachability, object concept, and `.all/` are stable throughout.
+  Adopting (c) requires: SPEC §2 rule-2 rewording, invariant-3 rewording
+  ("at its object concept, and at any browsed ancestor where no listed
+  child covers it"), and a new coverage invariant in SPEC §6 (for every
+  browsable concept C, every member of extent(C) is either listed at C
+  or in the extent of a listed child). Status: recommended, awaiting
+  Peter's decision.
+
+  Related but distinct (not fixed by any option above, deliberately
+  open): categories with **no objects at all** are invisible everywhere
+  (children require non-empty extents) — whether the mount should show
+  vocabulary or only content, judge after browsing a fuller ontology.
