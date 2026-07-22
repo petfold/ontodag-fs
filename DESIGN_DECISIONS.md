@@ -176,3 +176,19 @@ authoritative for anything.
   under FUSE.
 - **OR/NOT queries**: OR permanently rejected *in path syntax*; a query API
   outside path syntax (CLI or fsspec method) may come later.
+- **Single-object tails produce dead-end directories** (surfaced by the v0
+  manual milestone, 2026-07-22). With rex.txt filed under `dog ⊂ {animal,
+  pet}` as the only pet, `/animal/pet/` lists nothing but `.all/`: the
+  `dog` child is skipped (identical extent), and rex is not an
+  object-concept member of `{animal,pet}` under *implication*-closure
+  (its concept adds `dog`). Under true FCA (extent-driven) closure,
+  closure({animal,pet}) would *include* `dog` — the two concepts are the
+  same formal concept — and rex would be listed. So the current behavior
+  comes from implementing SPEC §1's "FCA closure" as DAG-implication
+  closure only. Candidate remedies to judge with more usage: (a)
+  extent-driven closure for resolution/objects_at (FCA-pure, minimal
+  listings, but paths acquire extent-implied attributes in their shown
+  intent); (b) don't skip identical-extent children (no dead ends, but
+  Tagsistant-style deep chains); (c) accept it — `.all/` always shows the
+  objects. The object is always reachable (typed path, `.all/`) and is
+  listed plainly at its object concept, so invariants hold either way.

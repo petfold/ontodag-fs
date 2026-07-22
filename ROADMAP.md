@@ -30,6 +30,14 @@ mounting path ontodag-fs will reuse.
 - Invariant tests 1, 2, 6, 8 from SPEC §6 (the read-side ones).
 - Manual milestone: mount Peter's actual ontology, browse it, judge whether
   the projection *feels* right. This validates everything downstream.
+  **Executed 2026-07-22** end-to-end against the real local Bee node: the
+  store.od categories merged into a fresh `swarm:ontodag-fs-demo` store,
+  five real objects filed (bytes via /bytes, DAG committed via
+  recordstore), browsed cold-start via `python -m ontodag_fs` (thin
+  milestone CLI, ls/tree/cat/info/mount) and via an actual FUSE mount.
+  Finding to judge: single-object tails yield dead-end directories — see
+  DESIGN_DECISIONS "Acknowledged and deferred". Peter's own judgment of
+  the feel is still the open item.
 
 ## v0.1 — filing
 
