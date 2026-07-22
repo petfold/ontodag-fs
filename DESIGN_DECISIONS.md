@@ -151,6 +151,19 @@ authoritative for anything.
     thereby preserved for every reader of the shared DAG, not just the
     author.
 
+17. **Node `payload` is for category-attached content; objects don't use it**
+    (decided 2026-07-22). ontodag's node records carry a per-node `payload`
+    Swarm ref, which predates ontodag-fs. Under decision #12 an object
+    node's *name* is its Swarm reference, making `payload` redundant for
+    objects — `OntoDAGIndex` ignores it. It is deliberately retained (not
+    deprecated) for the other case: content attached to a *category* (e.g.
+    a concept's descriptive document), a plausible future feature that is
+    already persisted and tested upstream. No byte-storage duplication
+    exists in the cluster: recordstore persists the graph (index on
+    Swarm), swarmfs stores object bytes (bytestore on Swarm) — the only
+    overlap is two Bee HTTP clients at the transport layer, consolidation
+    of which would be an upstream refactor invisible to this repo.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context

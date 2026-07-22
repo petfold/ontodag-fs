@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 from swarmfs import SwarmFileSystem
 
-from ontodag_fs import InMemoryIndex, OntoDAGFileSystem
+from ontodag_fs import OntoDAGFileSystem
 
-from conftest import FakeSwarmClient, seed
+from conftest import INDEX_BACKENDS, FakeSwarmClient, make_index, seed
 
 
 def test_directory_info_carries_closed_intent(zoo):
@@ -50,10 +50,10 @@ def test_isdir_isfile_basics(zoo):
     assert zoo.fs.isdir("/.unfiled")
 
 
-def dual_nature_fixture():
+def dual_nature_fixture(backend):
     """An index where the name 'wolf' is both an attribute and a label."""
     store: dict[bytes, bytes] = {}
-    idx = InMemoryIndex()
+    idx = make_index(backend)
     idx.add_attribute("mammal")
     idx.add_attribute("wolf", ["mammal"])
     wolf_obj = seed(store, b"a wolf portrait")
@@ -64,8 +64,9 @@ def dual_nature_fixture():
     return OntoDAGFileSystem(index=idx, swarm=swarm), wolf_obj
 
 
-def test_dual_nature_attribute_wins_isdir_object_wins_isfile():
-    fs, wolf_ref = dual_nature_fixture()
+@pytest.mark.parametrize("backend", INDEX_BACKENDS)
+def test_dual_nature_attribute_wins_isdir_object_wins_isfile(backend):
+    fs, wolf_ref = dual_nature_fixture(backend)
     names = fs.ls("/mammal", detail=True)
     types = {(e["name"], e["type"]) for e in names}
     assert ("/mammal/wolf", "directory") in types

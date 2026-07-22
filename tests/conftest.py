@@ -8,9 +8,20 @@ import hashlib
 from types import SimpleNamespace
 
 import pytest
+from ontodag.dag import OntoDAG
 from swarmfs import SwarmFileSystem
 
-from ontodag_fs import InMemoryIndex, OntoDAGFileSystem
+from ontodag_fs import InMemoryIndex, OntoDAGFileSystem, OntoDAGIndex
+
+INDEX_BACKENDS = ("memory", "ontodag")
+
+
+def make_index(backend: str):
+    """Both implementations expose the same builder surface; the whole
+    suite runs against each to keep their semantics identical."""
+    if backend == "memory":
+        return InMemoryIndex()
+    return OntoDAGIndex(OntoDAG())
 
 GOOD_STAMP = {
     "batchID": "ab" * 32,
@@ -102,9 +113,9 @@ OBJECTS = {
 }
 
 
-def build_zoo() -> SimpleNamespace:
+def build_zoo(backend: str = "memory") -> SimpleNamespace:
     store: dict[bytes, bytes] = {}
-    index = InMemoryIndex()
+    index = make_index(backend)
     for name, parents in ATTRIBUTES.items():
         index.add_attribute(name, parents)
     refs: dict[str, str] = {}
@@ -120,6 +131,6 @@ def build_zoo() -> SimpleNamespace:
     )
 
 
-@pytest.fixture
-def zoo() -> SimpleNamespace:
-    return build_zoo()
+@pytest.fixture(params=INDEX_BACKENDS)
+def zoo(request) -> SimpleNamespace:
+    return build_zoo(request.param)
