@@ -231,6 +231,9 @@ does help), and the only Japanese thing is a main course, so `japanese/`
 lives inside `main/`. Directories are offered where they *refine* — more on
 this in §5.
 
+(Prefer a prompt over one-shot commands? Run bare `odag-fs` for an
+interactive shell with `cd`/`ls`/`cat` and relative paths — see §4.)
+
 Read a file, ask about a directory or a file:
 
 ```console
