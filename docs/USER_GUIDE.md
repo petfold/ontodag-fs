@@ -390,6 +390,40 @@ Objects the ontology knows about but that currently have no categories
 (freshly registered, or fully retracted in v0.1) don't vanish — they wait
 in `/.unfiled/` until you classify them.
 
+### An interactive shell for the lattice
+
+Run `odag-fs` with no command and you get odag's interactive convention —
+a `>` prompt — plus a *current directory*, so paths can be relative and
+the store loads only once for the whole session:
+
+```console
+$ odag-fs
+odag-fs 0.0.1 - type help for help
+> cd italian
+/italian> ls
+.all/
+notes.md
+recipe/
+vegetarian/
+/italian> cat dessert/tiramisu.md
+# Tiramisu
+Mascarpone, espresso-soaked savoiardi, cocoa. Chill 4 hours.
+/italian> cd ../japanese
+/japanese> pwd
+/japanese
+/japanese> exit
+```
+
+`..` steps back along the path you typed, `help` lists the commands, and
+`exit`/`quit` (or Ctrl-D) leaves. The same loop reads from a pipe for
+batch scripts — `#` lines are comments, a failing line reports its error
+and the script continues, and the exit code tells you whether every line
+succeeded:
+
+```console
+$ odag-fs < commands.txt
+```
+
 ### Data tools for free (fsspec)
 
 `OntoDAGFileSystem` is a standard fsspec filesystem, so data tools can read

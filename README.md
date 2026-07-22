@@ -60,6 +60,7 @@ $ pip install \
 $ odag-fs set store swarm:my-store     # once — the same setting odag uses
 $ odag-fs tree /
 $ odag-fs cat /pet/dog/rex.txt
+$ odag-fs                              # interactive: cd/ls/cat with a > prompt
 $ pip install fusepy && odag-fs mount ~/mnt
 ```
 
