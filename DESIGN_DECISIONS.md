@@ -164,6 +164,31 @@ authoritative for anything.
     overlap is two Bee HTTP clients at the transport layer, consolidation
     of which would be an upstream refactor invisible to this repo.
 
+18. **The coverage rule for plain listings** (decided 2026-07-22, adopting
+    the recommendation under "Dead-end directories" below). Listing rule 2
+    becomes: files at concept C = members of extent(C) whose intent
+    contains no listed child attribute — the listing must *cover* the
+    extent (everything at or below C is a shown file or inside a shown
+    subdirectory). Fixes the milestone's dead-end case only; object-concept
+    members list exactly as before; coverage test is `o.intent ∩
+    shown_children ≠ ∅` (no extra queries); resolution and (future) write
+    semantics untouched. Accepted trade-off: display position of an object
+    is population-dependent; object concept, reachability, and `.all/` are
+    stable. SPEC §2 rule 2, invariant 3, and new invariant 9 updated.
+19. **FCA terminology posture** (recorded 2026-07-22, raised by Peter).
+    "Intent"/"extent"/"closure" throughout these docs are the
+    implication/subsumption versions — closure is DAG-ancestor completion
+    of asserted attributes; extents are derived object sets — NOT the
+    extensional operators of formal concept analysis (intent(extent(A))
+    over the current population). This is deliberate: extensional closure
+    would make a path's meaning depend on today's data and would poison
+    write-time assertion (#18's analysis, option (a)). The borrowing is
+    acknowledged as potentially confusing to FCA-literate readers and is
+    flagged in SPEC §1; renaming (e.g. "ascription"/"membership") was
+    considered and deferred — revisit if outside contributors stumble.
+    Book-FCA stays recoverable (an object's ancestor set is its row in the
+    formal context); inductive FCA is mdl-fca's territory, upstream.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context
@@ -219,8 +244,8 @@ authoritative for anything.
   ("at its object concept, and at any browsed ancestor where no listed
   child covers it"), and a new coverage invariant in SPEC §6 (for every
   browsable concept C, every member of extent(C) is either listed at C
-  or in the extent of a listed child). Status: recommended, awaiting
-  Peter's decision.
+  or in the extent of a listed child). Status: **adopted as decision #18**
+  (2026-07-22); SPEC updated, implemented in fs.py's concept listing.
 
   Related but distinct (not fixed by any option above, deliberately
   open): categories with **no objects at all** are invisible everywhere

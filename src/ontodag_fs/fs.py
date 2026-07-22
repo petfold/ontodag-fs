@@ -184,8 +184,14 @@ class OntoDAGFileSystem(AbstractFileSystem):
         cached = self._concepts.get(intent, gen)
         if cached is None:
             children = tuple(sorted(self.index.children(intent)))
-            named = disambiguate(self.index.objects_at(intent))
-            cached = (children, named)
+            covered = frozenset(children)
+            # coverage rule (SPEC §2 rule 2): list every extent member that
+            # no shown subdirectory covers — object-concept members always
+            # qualify, and single-object tails stop being dead ends
+            members = [
+                o for o in self.index.extent(intent) if not (o.intent & covered)
+            ]
+            cached = (children, disambiguate(members))
             self._concepts.put(intent, gen, cached)
         return cached
 
@@ -224,9 +230,9 @@ class OntoDAGFileSystem(AbstractFileSystem):
     def _lookup_file(self, parts: list[str], path: str) -> ObjectInfo:
         """Resolve path components to an object, or raise FileNotFoundError.
 
-        Basename matches against the object-concept members first (what plain
-        `ls` shows), then against the full extent — listing is scoped but
-        reachability is universal (SPEC §2)."""
+        Basename matches against the concept's listed files first (the
+        coverage rule — what plain `ls` shows), then against the full
+        extent — listing is scoped but reachability is universal (SPEC §2)."""
         if not parts:
             raise FileNotFoundError(path)
         *dir_parts, base = parts

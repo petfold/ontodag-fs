@@ -66,6 +66,27 @@ def test_every_shown_name_cats_back_to_its_bytes(backend, attrs, use_all):
         assert hashlib.sha256(data).hexdigest() == entry["swarm_ref"]
 
 
+# 9. coverage: everything in the extent is a file here or inside a listed child
+@on_each_backend
+@given(attrs=attr_sets)
+def test_listing_covers_the_extent(backend, attrs):
+    zoo = ZOOS[backend]
+    intent = zoo.index.closure(attrs)
+    path = "/" + "/".join(sorted(attrs))
+    entries = zoo.fs.ls(path, detail=True)
+    dirs = {
+        e["name"].rsplit("/", 1)[-1]
+        for e in entries
+        if e["type"] == "directory"
+    } - {".all", ".swarm", ".unfiled"}
+    file_refs = {e["swarm_ref"] for e in entries if e["type"] == "file"}
+    for obj in zoo.index.extent(intent):
+        assert obj.ref in file_refs or (obj.intent & dirs), (
+            f"{obj.label} is in extent({sorted(intent)}) but neither listed "
+            f"nor covered by a shown child"
+        )
+
+
 # 8. reserved-namespace hygiene
 @on_each_backend
 def test_dot_attributes_rejected_on_write(backend):

@@ -134,3 +134,18 @@ def build_zoo(backend: str = "memory") -> SimpleNamespace:
 @pytest.fixture(params=INDEX_BACKENDS)
 def zoo(request) -> SimpleNamespace:
     return build_zoo(request.param)
+
+
+@pytest.fixture(params=INDEX_BACKENDS)
+def zoo_tail(request) -> SimpleNamespace:
+    """The v0-milestone shape: a single-object tail (rex, the only pet,
+    is a dog) — the dead-end case behind decision #18."""
+    store: dict[bytes, bytes] = {}
+    index = make_index(request.param)
+    index.add_attribute("animal")
+    index.add_attribute("pet")
+    index.add_attribute("dog", ["animal", "pet"])
+    index.add_object(seed(store, b"rex"), "rex.txt", {"dog"})
+    swarm = SwarmFileSystem(client=FakeSwarmClient(store), skip_instance_cache=True)
+    fs = OntoDAGFileSystem(index=index, swarm=swarm)
+    return SimpleNamespace(fs=fs, index=index, store=store)

@@ -11,6 +11,15 @@ ROADMAP.md).
   e.g. `jaguar` the car vs the animal — is acknowledged and deferred;
   see DESIGN_DECISIONS.md § Deferred.)
 - **Concept**: an FCA concept in the OntoDAG lattice — (extent, intent) pair.
+- **Terminology caveat** (for FCA-literate readers): "intent", "extent" and
+  "closure" are used here in the *implication/subsumption* sense — closure =
+  DAG-ancestor completion of an asserted attribute set; extent = the derived
+  object set below it. They are NOT the extensional operators of formal
+  concept analysis (closure = intent(extent(A)) over the current object
+  population): a path's meaning must not depend on what happens to be filed
+  today (see DESIGN_DECISIONS #18/#19). Book-FCA remains recoverable — every
+  object's ancestor set is its row in the formal context — and inductive FCA
+  lives upstream in mdl-fca.
 - **Object**: identified by its **Swarm reference** (64/128-char hex). Carries:
   - `intent`: set of attributes (closed under FCA implication when queried),
   - `label`: display filename (metadata, NOT identity),
@@ -39,15 +48,24 @@ ROADMAP.md).
 1. **Directories**: the concept's immediate sub-concepts *given the current
    query* (lattice children), by attribute name. Only attributes that refine
    the current extent (skip attributes yielding an identical or empty extent).
-2. **Files**: only objects whose *object concept* is this concept — i.e.
-   maximally described by the current intent, nothing more specific applies.
+2. **Files** (the coverage rule, DESIGN_DECISIONS #18): every member of the
+   extent whose intent contains *no listed child attribute* — i.e. every
+   object that none of the shown subdirectories covers. This includes all
+   objects whose object concept is this concept, and additionally rescues
+   objects stranded by identical-extent child skipping (the dead-end case
+   found at the v0 milestone).
 3. **`.all/`**: virtual subdirectory materializing the FULL extent (every
    object at or below this concept). Never precomputed; listed on demand.
 
 Rationale: full-extent-everywhere makes `ls /` list the entire store;
 object-concept-only makes browsing a scavenger hunt. Hybrid keeps listings
 small while keeping everything one `.all/` away. Reachability is universal;
-listing is scoped.
+listing is scoped. The coverage rule guarantees the listing *covers* the
+extent — everything at or below the concept is either a file here or inside
+a shown subdirectory; no dead ends. Consequence: an object's display
+position is population-dependent (it surfaces at a browsed ancestor until a
+refining sibling makes the child directory appear); its object concept,
+reachability, and `.all/` visibility are stable throughout.
 
 ### Naming / collision policy
 
@@ -124,8 +142,8 @@ Unsupported in v0 (raise NotImplementedError with a one-line reason):
 1. `resolve(p) == resolve(shuffle(p))` (order-insensitivity).
 2. `resolve(p) == resolve(p + [a])` for any `a ∈ closure(p)` (redundancy).
 3. File-then-find: after filing under attrset A, object is in `.all/` of every
-   concept with intent ⊆ closure(A), and in plain `ls` exactly at its object
-   concept.
+   concept with intent ⊆ closure(A), in plain `ls` at its object concept, and
+   at any browsed ancestor where no listed child covers it (coverage rule).
 4. `rm` locality: retracting at path P leaves visibility under any attribute
    set not implied by P's assertion unchanged.
 5. Content dedup: filing identical bytes under P1 then P2 yields one object
@@ -136,6 +154,9 @@ Unsupported in v0 (raise NotImplementedError with a one-line reason):
    of swarmfs upload calls is empty.
 8. Reserved-namespace hygiene: attributes beginning with `.` are rejected on
    write; `/.swarm/`, `/.unfiled/`, `.all/` never appear as attributes.
+9. Coverage (no dead ends): for every browsable concept C, every member of
+   extent(C) is either listed as a file at C or lies in the extent of a
+   listed child directory.
 
 ## 7. Non-goals (v0.x)
 

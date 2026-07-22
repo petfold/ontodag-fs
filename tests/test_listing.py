@@ -87,6 +87,33 @@ def test_unknown_attribute_is_enoent(zoo):
         zoo.fs.ls("/pet/unicorn")
 
 
+def test_coverage_rule_rescues_single_object_tails(zoo_tail):
+    """The v0-milestone dead end (decision #18): rex, the only pet, is a
+    dog — /animal/pet must list him, not just .all/."""
+    fs = zoo_tail.fs
+    assert basenames(fs, "/animal/pet", "file") == {"rex.txt"}
+    # the identical-extent child stays hidden; the object is the entry
+    assert basenames(fs, "/animal/pet", "directory") == {".all"}
+    assert fs.cat_file("/animal/pet/rex.txt") == b"rex"
+    # still listed at his object concept, and reachable by the typed path
+    assert basenames(fs, "/dog", "file") == {"rex.txt"}
+    assert fs.cat_file("/animal/pet/dog/rex.txt") == b"rex"
+
+
+def test_display_position_reflows_as_population_grows(zoo_tail):
+    """Accepted trade-off of #18: filing a second pet makes dog/ refine, so
+    rex moves from /animal/pet into /animal/pet/dog — still reachable."""
+    from conftest import seed
+
+    fs, index = zoo_tail.fs, zoo_tail.index
+    index.add_attribute("cat", ["animal", "pet"])
+    index.add_object(seed(zoo_tail.store, b"tom"), "tom.txt", {"cat"})
+    assert basenames(fs, "/animal/pet", "directory") == {"dog", "cat", ".all"}
+    assert basenames(fs, "/animal/pet", "file") == set()
+    assert fs.cat_file("/animal/pet/dog/rex.txt") == b"rex"
+    assert fs.cat_file("/animal/pet/rex.txt") == b"rex"  # reachability holds
+
+
 def test_find_terminates_and_sees_every_object(zoo):
     found = zoo.fs.find("/")
     refs = {e["swarm_ref"] for e in zoo.fs.ls("/.all", detail=True)}
