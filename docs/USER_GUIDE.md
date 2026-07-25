@@ -63,13 +63,10 @@ whole [fsspec](https://filesystem-spec.readthedocs.io/) data ecosystem.
 
 ### Install
 
-Everything installs from GitHub in one command:
+Everything is on PyPI — one command:
 
 ```console
-$ pip install \
-    "ontodag[swarm] @ git+https://github.com/petfold/ontodag.git" \
-    "swarmfs @ git+https://github.com/petfold/swarmfs.git" \
-    "ontodag-fs @ git+https://github.com/petfold/ontodag-fs.git"
+$ pip install "ontodag[swarm]" swarmfs ontodag-fs
 ```
 
 This gives you three commands: `odag` (edit the ontology), `odag-fs` (browse it as a filesystem), and — after `pip install fusepy` — the ability
