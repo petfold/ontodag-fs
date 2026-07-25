@@ -53,9 +53,9 @@ one object, several true names.
 ## Quick start
 
 ```console
+$ pip install swarmfs   # on PyPI (as are recordstore and swarmlite)
 $ pip install \
     "ontodag[swarm] @ git+https://github.com/petfold/ontodag.git" \
-    "swarmfs @ git+https://github.com/petfold/swarmfs.git" \
     "ontodag-fs @ git+https://github.com/petfold/ontodag-fs.git"
 $ odag-fs set store swarm:my-store     # once — the same setting odag uses
 $ odag-fs tree /
