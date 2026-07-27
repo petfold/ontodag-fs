@@ -136,7 +136,7 @@ import os
 import sys
 
 from fsspec.asyn import sync
-from ontodag.swarm_adapter import SwarmOntoDAG
+from ontodag.eager import EagerOntoDAG
 from recordstore import BeeBytesStore, FilePointer, RecordStore
 from swarmfs import SwarmFileSystem
 from ontodag_fs import OntoDAGIndex
@@ -146,7 +146,7 @@ BATCH = os.environ["BEE_BATCH"]  # a usable postage stamp
 
 store_name, path, *categories = sys.argv[1:]
 pointer = FilePointer(os.path.expanduser(f"~/.ontodag/{store_name}.root"))
-dag = SwarmOntoDAG(RecordStore(BeeBytesStore(API, BATCH), pointer=pointer))
+dag = EagerOntoDAG(RecordStore(BeeBytesStore(API, BATCH), pointer=pointer))
 index = OntoDAGIndex(dag)
 swarm = SwarmFileSystem(api_url=API)
 

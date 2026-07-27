@@ -1,5 +1,5 @@
 """End-to-end through the real persistence stack: the zoo filed into a
-SwarmOntoDAG (recordstore over an in-memory bytes store), committed,
+EagerOntoDAG (recordstore over an in-memory bytes store), committed,
 rehydrated from the root, and browsed through OntoDAGFileSystem — the
 "DAG on Swarm" configuration, offline."""
 
@@ -9,7 +9,7 @@ import pytest
 
 recordstore = pytest.importorskip("recordstore")
 
-from ontodag.swarm_adapter import SwarmOntoDAG
+from ontodag.eager import EagerOntoDAG
 from recordstore import MemoryBytesStore, RecordStore
 from swarmfs import SwarmFileSystem
 
@@ -22,7 +22,7 @@ def test_zoo_survives_commit_and_rehydrate():
     blobs = MemoryBytesStore()
     store: dict[bytes, bytes] = {}
 
-    dag = SwarmOntoDAG(RecordStore(blobs))
+    dag = EagerOntoDAG(RecordStore(blobs))
     index = OntoDAGIndex(dag)
     for name, parents in ATTRIBUTES.items():
         index.add_attribute(name, parents)
@@ -34,7 +34,7 @@ def test_zoo_survives_commit_and_rehydrate():
     root = dag.commit()
 
     # a fresh process: hydrate from the committed root, mount, browse
-    again = SwarmOntoDAG(RecordStore.at(root, blobs))
+    again = EagerOntoDAG(RecordStore.at(root, blobs))
     fs = OntoDAGFileSystem(
         index=OntoDAGIndex(again),
         swarm=SwarmFileSystem(client=FakeSwarmClient(store), skip_instance_cache=True),

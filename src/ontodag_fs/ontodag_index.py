@@ -7,7 +7,7 @@ the ancestor set; extents are OntoDAG's descendant-cone intersections
 filtered to object nodes.
 
 Works with a plain in-memory ``OntoDAG`` or a persistence-backed
-``SwarmOntoDAG`` alike — persistence is the DAG's business, never this
+``EagerOntoDAG`` alike — persistence is the DAG's business, never this
 layer's. The builder surface (``add_attribute``/``add_object``) matches
 ``InMemoryIndex`` so the two implementations are drop-in interchangeable
 (and are tested against the same suite).
