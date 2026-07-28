@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "ontodag-fs"
 version = "0.0.1"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
+license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
 dependencies = [
     "fsspec",
@@ -35,3 +36,8 @@ markers = [
     "fuse: FUSE integration tests (require libfuse; skipped by default)",
 ]
 addopts = "-m 'not fuse'"
+
+[project.urls]
+Homepage = "https://github.com/petfold/ontodag-fs"
+Repository = "https://github.com/petfold/ontodag-fs"
+Issues = "https://github.com/petfold/ontodag-fs/issues"

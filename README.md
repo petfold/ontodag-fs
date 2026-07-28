@@ -1,5 +1,9 @@
 # ontodag-fs
 
+[![tests](https://github.com/petfold/ontodag-fs/actions/workflows/tests.yml/badge.svg)](https://github.com/petfold/ontodag-fs/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/ontodag-fs)](https://pypi.org/project/ontodag-fs/)
+[![license](https://img.shields.io/badge/license-BSD--3--Clause-blue)](LICENSE)
+
 **Browse your knowledge, not your folders.** ontodag-fs presents an
 [OntoDAG](https://github.com/petfold/ontodag) category lattice as a real,
 mountable filesystem, with file content stored on
