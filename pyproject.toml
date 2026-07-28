@@ -8,7 +8,7 @@ version = "0.0.2"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
-keywords = ["swarm", "ethereum", "web3", "bee", "fsspec", "fuse", "filesystem", "ontology", "concept-lattice", "semantic-filesystem"]
+keywords = ["swarm", "ethereum", "web3", "bee", "fsspec", "fuse", "filesystem", "ontology", "concept-lattice", "semantic-filesystem", "fca", "formal-concept-analysis", "formal concept analysis"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
