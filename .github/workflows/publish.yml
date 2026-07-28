@@ -19,7 +19,7 @@ jobs:
       # ontodag-fs` actually gives a user. 0.0.1 shipped importing
       # ontodag.eager, which the released ontodag did not contain — a gate on
       # PyPI-resolved deps is what would have caught it.
-      - run: pip install -e ".[dev]"
+      - run: pip install -e ".[test]"
       # addopts in pyproject.toml excludes the `fuse` marker, so libfuse is
       # not needed here; FUSE integration tests run locally with `pytest -m fuse`.
       - run: pytest

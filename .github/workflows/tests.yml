@@ -13,11 +13,11 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - run: pip install -e ".[dev]"
+      - run: pip install -e ".[test]"
       # addopts in pyproject.toml excludes the `fuse` marker, so libfuse is
       # not needed here; FUSE integration tests run locally with `pytest -m fuse`.
       - run: pytest

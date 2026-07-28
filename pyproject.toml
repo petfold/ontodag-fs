@@ -8,6 +8,15 @@ version = "0.0.1"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Filesystems",
+]
 dependencies = [
     "fsspec",
     "ontodag",
@@ -15,11 +24,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
+test = [
     "pytest",
     "pytest-asyncio",
     "hypothesis",
 ]
+dev = ["ontodag-fs[test]"] # back-compat alias; [test] is the stack-wide name
 
 [project.entry-points."fsspec.specs"]
 ontodag = "ontodag_fs.fs:OntoDAGFileSystem"
