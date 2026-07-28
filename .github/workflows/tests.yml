@@ -17,6 +17,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      # tests/test_persistence.py needs ontodag.eager, which exists on ontodag's
+      # main branch but NOT in the released ontodag 0.2.0 on PyPI (it was
+      # swarm_adapter.py there, renamed in ontodag e4e0ab1 and never released).
+      # Drop this line once ontodag >= 0.3 ships with the renamed modules.
+      - run: pip install "ontodag @ git+https://github.com/petfold/ontodag@main"
       - run: pip install -e ".[dev]"
       # addopts in pyproject.toml excludes the `fuse` marker, so libfuse is
       # not needed here; FUSE integration tests run locally with `pytest -m fuse`.
