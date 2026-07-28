@@ -87,7 +87,7 @@ real API, outside this repo.
 
 ## Dev environment
 
-- Python ≥ 3.11. `pip install -e ".[dev]"`.
+- Python ≥ 3.11. `pip install -e ".[test]"`.
 - Core deps: `fsspec`, `ontodag`, `swarmfs`. Dev deps: `pytest`,
   `pytest-asyncio`, `hypothesis`.
 - Tests must run **without a Bee node and without FUSE installed**: swarmfs is

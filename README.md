@@ -116,7 +116,7 @@ DuckDB, …) for free.
 
 ```console
 $ git clone https://github.com/petfold/ontodag-fs && cd ontodag-fs
-$ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+$ python3 -m venv .venv && .venv/bin/pip install -e ".[test]"
 $ .venv/bin/pytest
 ```
 
