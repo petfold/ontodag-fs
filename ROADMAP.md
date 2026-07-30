@@ -85,11 +85,13 @@ surface — it all arrives through the injected ConceptIndex / bytestore.
 
 ## Upstream: ontodag dimension lattices (design agreed 2026-07-30)
 
-ontodag has an agreed design for **parametric items** — `weight(..5000000mg)`,
+ontodag has **parametric items** — `weight(..5000000mg)`,
 `time(2026-06-01T00:00:00Z..2026-08-31T23:59:59Z)`, `geo(u2e)` — ordered by
 computed containment of denoted value sets (`ontodag/docs/DIMENSIONS.md`;
-implementation queued there). Nothing here changes until that ships, but the
-implications are worked out now so path semantics don't drift:
+**shipped in ontodag 0.4.0, 2026-07-30**, including virtual query terms and
+`LazyOntoDAG` support, so the fs-side work below is unblocked whenever this
+repo wants it). The path implications, worked out in advance so semantics
+don't drift:
 
 - **Parametric path components are single attribute constraints**, so hard
   rule 3 (no query operators in paths) is *not* violated: `/photo/time(a..b)/`
