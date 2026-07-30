@@ -82,3 +82,45 @@ surface — it all arrives through the injected ConceptIndex / bytestore.
 - Query API beyond path syntax (OR/NOT outside paths).
 - Automatic intent extraction hooks (transducer analog; mdl-fca integration).
 - Feeds/mutable roots; ACT-protected objects.
+
+## Upstream: ontodag dimension lattices (design agreed 2026-07-30)
+
+ontodag has an agreed design for **parametric items** — `weight(..5000000mg)`,
+`time(2026-06-01T00:00:00Z..2026-08-31T23:59:59Z)`, `geo(u2e)` — ordered by
+computed containment of denoted value sets (`ontodag/docs/DIMENSIONS.md`;
+implementation queued there). Nothing here changes until that ships, but the
+implications are worked out now so path semantics don't drift:
+
+- **Parametric path components are single attribute constraints**, so hard
+  rule 3 (no query operators in paths) is *not* violated: `/photo/time(a..b)/`
+  is one category whose extension is computed, and concatenation stays AND.
+  The canonical grammar (`(` `)` `..` `x`, digits, unit suffixes) is
+  POSIX-legal in a path component — only the exact components `.` and `..`
+  are special to the kernel, embedded `..` inside a longer name is fine.
+  (Interactive shells need quoting for parentheses; annoyance, not blocker.)
+- **Virtual directories.** A parametric component need not exist as a node —
+  resolution parses it and evaluates the *virtual query term* (ontodag
+  DIMENSIONS.md §8). `info()` on a syntactically valid term whose head is a
+  declared dimension succeeds; the namespace is infinite but computed on
+  demand, which is exactly hard rule 5 (lazy materialization). Malformed
+  parameter, undeclared head, or sub-base precision → FileNotFoundError on
+  read, EINVAL-mapped OSError on write.
+- **Listings show present values only.** `ls /weight/` is the dimension's
+  anchor star (its used values) — never an enumeration of the value space;
+  `ls` under a virtual interval dir shows present matching values plus
+  objects. Sort dimension listings by value (registry order), not
+  lexicographically.
+- **Sugar on lookup, canonical on display.** Accept `weight(3kg)` in a path
+  and resolve to the canonical `weight(3000000mg)` (like case-insensitive
+  lookup); readdir shows canonical names first, friendly display labels are
+  a later, display-only layer. Note hard rule 1 is untouched: it governs
+  *object* labels; attribute names are identities, and canonical strings are
+  the real directory names.
+- **Filing hits ontodag's new boundary checks**: filing under provably
+  disjoint same-dimension components (`/weight(..2000g)/weight(3000g..)/`)
+  raises ontodag's disjoint-parents guard → EINVAL; as a read query the same
+  path is legal and provably empty. Same-dimension components pre-intersect
+  exactly, so the order-insensitivity invariant extends unchanged.
+- **Regions and generated sets need zero fs work**: `/photo/balaton-region/`
+  and `/offers/saturdays/` are ordinary nodes over generated children
+  (DIMENSIONS.md §9) and already browse today.

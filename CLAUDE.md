@@ -57,7 +57,7 @@ real API, outside this repo.
 
 | Repo | Role | This repo's relationship |
 |---|---|---|
-| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier |
+| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Its dimension-lattices design (parametric items like `time(a..b)`, agreed 2026-07-30) will surface here as virtual directories — path implications are pre-worked in ROADMAP.md § "Upstream: ontodag dimension lattices" |
 | `swarmfs` | fsspec backend for Swarm | dependency — the bytestore |
 | `recordstore` | versioned key→record store over Swarm | indirect (via ontodag persistence) |
 | `mdl-fca` | probabilistic FCA / MDL learning | not a dependency; consumes the same DAG upstream |
