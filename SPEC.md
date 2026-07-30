@@ -29,6 +29,25 @@ ROADMAP.md).
   `resolve(path) = concept whose intent is the FCA closure of that set`.
   If no such concept exists in the lattice → FileNotFoundError (ENOENT).
   Order-insensitive and idempotent under redundant components by construction.
+- **Typed values (2026-07-31; OntoDAG-backed index only, ontodag ≥ 0.4.0).**
+  A component of the form `head(param)` whose head is a *declared dimension*
+  in the DAG is a single attribute constraint whose subsumption is computed
+  from the name (`weight(..5kg)`, `geo(u2ed)`). Contract extensions, all
+  confined to `OntoDAGIndex`:
+  - *Sugar on lookup:* the closure holds the canonical name
+    (`weight(3kg)` → `weight(3000000mg)`); the head chain is implied, so
+    `/weight/weight(..5kg)` ≡ `/weight(..5kg)`.
+  - *Virtual directories:* a well-formed term needs no node — resolution
+    succeeds, extents are computed, nothing is materialized by reading.
+    The namespace is infinite; listings still show only *present* values
+    (via member intents), per the lazy-materialization rule.
+  - *Errors:* a malformed parameter under a declared head →
+    UnknownAttributeError → ENOENT on the read surface. Undeclared heads
+    stay opaque atoms (backward compatible). Write-side guards (disjoint
+    same-dimension parents, unit families) surface from `dag.put` in the
+    builder API.
+  - `InMemoryIndex` does not support dimensions (no DAG to declare them in);
+    the interchangeability contract covers the non-parametric surface only.
 
 ## 2. Mount namespace layout
 

@@ -39,6 +39,14 @@ both a spider thing and a document, so it lives at `/animal/spider/document/`,
 `/document/spider/`, and every reordering of those. No copies, no symlinks:
 one object, several true names.
 
+With ontodag ≥ 0.4.0 the lattice can carry **typed values**, and then paths
+can query them: `ls '/parcel/weight(..5kg)/.all'` lists everything filed at
+3 kg, 4.5 kg, … — a *virtual* directory that exists for any well-formed
+bound without anyone creating it, computed exactly (integer arithmetic, no
+floats). Friendly units resolve (`weight(3kg)` ≡ `weight(3000g)`); geohash
+prefixes (`/geo(u2)`) and fits-inside sizes work the same way. See User
+Guide §"Typed values in paths".
+
 ## The ideas in five lines
 
 - **Paths are queries.** `/pet/dog` means "everything that is a pet AND a

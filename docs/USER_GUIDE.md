@@ -440,6 +440,36 @@ with fs.open("/measurements/2026/data.csv") as f:
 
 ---
 
+### Typed values in paths (ontodag ≥ 0.4.0)
+
+If the catalogue declares a **dimension** — a category placed under one of
+ontodag's kind categories, see its User Guide §4.7 — then values like
+`weight(3kg)` are ordinary attributes, and *ranges become directories you
+can simply ask for*:
+
+```console
+$ ls '/parcel/weight(..5kg)/.all'      # everything at most 5 kg
+light.txt
+$ ls '/weight'                         # the values actually in use
+weight(3000000mg)/  weight(9000000mg)/  .all/
+```
+
+Three things to know (quote the parentheses in a shell):
+
+- **Threshold directories are virtual.** `/parcel/weight(..5kg)` exists for
+  any well-formed bound — no one had to create it, and listing it creates
+  nothing. Misspell the value (`weight(3zz)`) and you get a plain
+  file-not-found.
+- **Friendly units work everywhere, canonical names are what you see.**
+  `weight(3kg)`, `weight(3000g)` and `weight(3.0kg)` are the same
+  directory; listings show the stored form (`weight(3000000mg)` — exact
+  integers in base units).
+- **Order still never matters**, and the dimension name is implied:
+  `/weight/weight(..5kg)` is the same place as `/weight(..5kg)`.
+
+This needs the OntoDAG-backed index (the default when you build on a real
+DAG); geo prefixes (`/geo(u2)`) and fits-inside sizes work the same way.
+
 ## 5. Things that might surprise you (by design)
 
 - **Directories appear only where they help.** A category shows up as a
