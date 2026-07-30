@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    "ontodag",
+    "ontodag>=0.4.0",  # parametric dimensions: virtual directories need 0.4.0
     "swarmfs",
 ]
 

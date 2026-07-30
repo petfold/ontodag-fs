@@ -88,10 +88,12 @@ surface — it all arrives through the injected ConceptIndex / bytestore.
 ontodag has **parametric items** — `weight(..5000000mg)`,
 `time(2026-06-01T00:00:00Z..2026-08-31T23:59:59Z)`, `geo(u2e)` — ordered by
 computed containment of denoted value sets (`ontodag/docs/DIMENSIONS.md`;
-**shipped in ontodag 0.4.0, 2026-07-30**, including virtual query terms and
-`LazyOntoDAG` support, so the fs-side work below is unblocked whenever this
-repo wants it). The path implications, worked out in advance so semantics
-don't drift:
+shipped in ontodag 0.4.0, 2026-07-30). **Implemented here 2026-07-31**, in
+`OntoDAGIndex` alone (`closure`/`add_object` — the fs layer needed zero
+changes, since closure-success already means directory-exists everywhere):
+virtual directories, sugar-on-lookup, canonical listings, guard mapping —
+`tests/test_dimensions.py`. OntoDAG-backed index only; `InMemoryIndex` has
+no DAG to declare dimensions in. The path semantics as implemented:
 
 - **Parametric path components are single attribute constraints**, so hard
   rule 3 (no query operators in paths) is *not* violated: `/photo/time(a..b)/`

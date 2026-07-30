@@ -33,6 +33,32 @@ class OntoDAGIndex:
         # caught by the filesystem cache's TTL (SPEC §4).
         self._generation = 0
 
+    # ---------------------------------------------------------- dimensions
+    #
+    # ontodag >= 0.4.0 parametric terms (weight(..5kg), geo(u2ed)) are single
+    # attribute constraints whose subsumption is computed from the name —
+    # ROADMAP § "Upstream: ontodag dimension lattices". A term of a declared
+    # dimension is a valid attribute even when no node exists (a VIRTUAL
+    # directory: infinite namespace, computed on demand — lazy
+    # materialization is already the house rule). Sugar resolves to the
+    # canonical name on lookup (weight(3kg) -> weight(3000000mg)); listings
+    # only ever show present values, because `children` reads them from
+    # member intents. Only this OntoDAG-backed index supports dimensions;
+    # InMemoryIndex has no DAG to declare them in.
+
+    def _parametric(self, name: str):
+        """(head, kind, canonical) for a parametric term of a *declared*
+        dimension; None for opaque names. A malformed parameter under a
+        declared head is UnknownAttributeError — the filesystem maps it to
+        FileNotFoundError, the right read-side answer."""
+        parse = getattr(self._dag, "_parse_parametric", None)
+        if parse is None:  # pre-0.4.0 ontodag: no dimension support
+            return None
+        try:
+            return parse(name)
+        except ValueError as exc:
+            raise UnknownAttributeError(f"{name}: {exc}") from exc
+
     # ------------------------------------------------------------- building
 
     def add_attribute(self, name: str, parents: Iterable[str] = ()) -> None:
@@ -53,7 +79,12 @@ class OntoDAGIndex:
             validate_attribute(a)
             node = self._dag.nodes.get(a)
             if node is None or not self._is_category(node):
-                raise UnknownAttributeError(a)
+                # A parametric term of a declared dimension is fileable even
+                # unmaterialized: dag.put canonicalizes it, creates the value
+                # node and its anchor, and enforces the boundary guards
+                # (disjoint parents, unit families) itself.
+                if self._parametric(a) is None:
+                    raise UnknownAttributeError(a)
         metadata = {OBJECT_KEY: True}
         if label:
             metadata[LABEL_KEY] = label
@@ -104,8 +135,17 @@ class OntoDAGIndex:
         for a in set(attrs):
             node = self._dag.nodes.get(a)
             if node is None or not self._is_category(node):
-                raise UnknownAttributeError(a)
-            out.add(a)
+                parsed = self._parametric(a)
+                if parsed is None:
+                    raise UnknownAttributeError(a)
+                head, _kind, canonical = parsed
+                out.add(canonical)
+                node = self._dag.nodes.get(canonical)
+                if node is None:
+                    # Virtual term: no node, but its head chain is still
+                    # implied — /weight/weight(..5kg) ≡ /weight(..5kg).
+                    node = self._dag.nodes[head]
+            out.add(node.name)
             out.update(
                 anc.name
                 for anc in self._dag.get_ancestors(node, ignore={self._dag.root})
