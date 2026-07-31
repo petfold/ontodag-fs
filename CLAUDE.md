@@ -93,6 +93,13 @@ real API, outside this repo.
 - Tests must run **without a Bee node and without FUSE installed**: swarmfs is
   exercised through its Memory/mock ChunkStore backend; FUSE integration tests
   are opt-in (`pytest -m fuse`) and skipped by default.
+- The one live-node test (`tests/test_live_bee.py`, house convention: skips
+  unless `BEE_API` **and** `BEE_BATCH` are set, real purchased batch only) is
+  where both Swarm paths go live at once — real BMT refs as object
+  identities, classifications in an OntoDAG on the same node, browse/cat/
+  range-read plus scorched-earth rehydration from the committed root. First
+  passed 2026-08-01 against a Gnosis-mainnet bee 2.8.1 light node. Everything
+  else uses FakeSwarmClient (sha256 stand-in refs; internal consistency only).
 - Property-based tests (hypothesis) are the preferred style for path-resolution
   invariants — mirror the invariant-test approach used in the `ontodag` repo.
 
