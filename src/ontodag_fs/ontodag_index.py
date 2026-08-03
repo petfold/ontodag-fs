@@ -126,11 +126,18 @@ class OntoDAGIndex:
         if intent:
             below = self._dag.get(sorted(intent))
             return {n for n in below if self._is_object(n)}
-        # top concept: every *filed* object; unfiled (root-only parents)
-        # objects live under /.unfiled exclusively
+        # Top concept: every *filed* object; unfiled (root-only parents)
+        # objects live under /.unfiled exclusively.
+        #
+        # `get([])` is ontodag's "the empty query is the universe" (0.10.1).
+        # It walks the DAG instead of reading `self._dag.nodes`, which is what
+        # makes this correct on a partially-resident graph: on a LazyOntoDAG,
+        # `nodes` holds only what has been fetched so far, so a scan answers
+        # with whatever happens to be cached — silently, and differently
+        # depending on what ran before it.
         return {
             n
-            for n in self._dag.nodes.values()
+            for n in self._dag.get([])
             if self._is_object(n) and self._object_intent(n)
         }
 
@@ -196,14 +203,30 @@ class OntoDAGIndex:
             if not any(ext < other for other in candidates.values())
         )
 
+    def _resident(self, node):
+        """A node with its metadata and edges filled in.
+
+        On a resident DAG this is the node itself. On a LazyOntoDAG, an edge
+        walk hands back *stubs* — registered by name, but with empty metadata
+        until their record is fetched — and `nodes.get` is the accessor that
+        loads and expands one. Reading `metadata["object"]` off a stub quietly
+        answers False, which is how the object flag went missing."""
+        return self._dag.nodes.get(node.name) or node
+
     def unfiled(self) -> tuple[ObjectInfo, ...]:
+        # An object with no classification hangs directly off the root, so this
+        # is the root's fan-out rather than a scan of every node — cheaper
+        # everywhere, and correct on a partially-resident DAG for the same
+        # reason as `_extent_nodes` above. The intent check stays: it is the
+        # definition, and root's children are only the candidate set.
+        root = self._resident(self._dag.root)
         return self._sorted(
             ObjectInfo(
                 ref=n.name,
                 label=n.metadata.get(LABEL_KEY, n.name),
                 intent=frozenset(),
             )
-            for n in self._dag.nodes.values()
+            for n in (self._resident(k) for k in root.neighbors)
             if self._is_object(n) and not self._object_intent(n)
         )
 

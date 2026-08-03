@@ -74,6 +74,46 @@ surface — it all arrives through the injected ConceptIndex / bytestore.
   assertions to the shared base, uploading referenced local bytes to Swarm
   *first* (DESIGN_DECISIONS #16: nothing shared may dangle).
 
+### Residency: mounting a lazy DAG (evaluated 2026-08-03)
+
+`_build_fs` calls the backend's `.load()`, which hydrates the whole lattice —
+the one eager step left in an otherwise lazy stack (hard rule 5). ontodag has
+offered the alternative since 0.2.0/0.6.0: `LazyOntoDAG` fetches nodes as a
+query walks them, `SparseOntoDAG` adds partially-resident writes. Measured over
+one committed root, 199 nodes, counting blob fetches (`tests/test_residency.py`
+holds the fixture shape):
+
+| | mount | `ls /attr03` | virtual `weight(..50kg)` | `ls /` |
+|---|---|---|---|---|
+| eager | 874 | 0 | 0 | 0 |
+| lazy | 0 | 39 | 8 | 390 |
+
+So a session that browses a few directories costs ~47 fetches lazily against
+874 to mount eagerly, and a bounded typed-value query is genuinely bounded.
+Two things came out of the evaluation:
+
+- **Fixed now: `OntoDAGIndex` was not residency-safe.** Two call sites read
+  `self._dag.nodes.values()`, which on a lazy DAG holds only what has been
+  fetched — so they answered with whatever was cached, differing by which query
+  ran first, and never raised. `ls /` reported 4 of 60 children and
+  `/.unfiled` reported none of two objects. Both now walk the DAG (`get([])`
+  for the top concept, the root's fan-out for unfiled) and every answer is
+  identical across eager/lazy/sparse, under test.
+- **Not adopted at the mount yet, for one specific reason.** Building a lazy
+  DAG needs the backend's record store, and ontodag exposes only
+  `_record_store()` — private. This repo already leans on three private
+  `__main__` helpers as accepted milestone tooling; a fourth, for a win that
+  `ls /` does not yet get, is not worth it. **Upstream ask: a public seam** —
+  `backend.record_store()`, or `load(resident=False)`. The library path needs
+  nothing: `OntoDAGIndex(LazyOntoDAG(store))` works today.
+
+`ls /` is the outlier and stays one: `children(∅)` runs a cone query per
+candidate attribute, so on a lazy DAG it costs more than loading the store.
+That is what `ontodag.cones` + `LazyOntoDAG(cone_index=...)` is for (375 → 6
+fetches on ontodag's own benchmark), and it needs a *published* index built by
+`odag index`, so it is a deployment step rather than a code change here.
+Sequence: public seam → lazy mount → cone index for the root listing.
+
 ## Later, only if earned by usage
 
 - `mkdir`/`rmdir` as concept creation/removal with deliberate intent semantics.
