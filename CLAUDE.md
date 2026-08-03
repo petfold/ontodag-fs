@@ -57,7 +57,7 @@ real API, outside this repo.
 
 | Repo | Role | This repo's relationship |
 |---|---|---|
-| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Floor is **0.10.1**: its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0), and its registry 3.0/4.0 canonical names (reduced rationals — `weight(9/2kg)`) are why path components are percent-encoded. See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
+| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.13.0,<0.15.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
 | `swarmfs` | fsspec backend for Swarm | dependency — the bytestore |
 | `recordstore` | versioned key→record store over Swarm | indirect (via ontodag persistence) |
 | `mdl-fca` | probabilistic FCA / MDL learning | not a dependency; consumes the same DAG upstream |
