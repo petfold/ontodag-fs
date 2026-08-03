@@ -20,13 +20,16 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    # 0.10.1 is the floor, not 0.4.0 (which shipped parametric dimensions):
-    # registry 3.0/4.0 changed canonical value names from integers in base
-    # units to reduced rationals of the SI anchor, so `weight(3kg)` is now
-    # canonical and `weight(4.5kg)` stores as `weight(9/2kg)`. Listings, path
-    # resolution and tests all name the current form; against an older ontodag
-    # every typed-value path would resolve to a different node.
-    "ontodag>=0.10.1",
+    # 0.11.0 is the floor, not 0.4.0 (which shipped parametric dimensions).
+    # Two reasons, both load-bearing here. Registry 3.0/4.0 changed canonical
+    # value names from integers in base units to reduced rationals of the SI
+    # anchor, so `weight(3kg)` is now canonical and `weight(4.5kg)` stores as
+    # `weight(9/2kg)` — against an older ontodag every typed-value path would
+    # resolve to a different node. And 0.11.0 is where the native `.od` store
+    # began persisting node metadata: before it, a file-backed store lost the
+    # object marks and display labels this adapter keeps there, and presented
+    # as an empty filesystem (tests/test_file_store.py).
+    "ontodag>=0.11.0",
     "swarmfs>=0.4.0",  # _read_reference / reader.bytes_size, the raw-ref reads
 ]
 
