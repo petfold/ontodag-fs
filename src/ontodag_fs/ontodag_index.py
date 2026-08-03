@@ -17,6 +17,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from ontodag import surface as _surface
 from ontodag.dag import Item, OntoDAG
 
 from .index import ObjectInfo, UnknownAttributeError
@@ -211,6 +212,32 @@ class OntoDAGIndex:
         if node is None or not self._is_object(node):
             return None
         return self._info(node)
+
+    # ------------------------------------------------------------- display
+
+    def display_name(self, attr: str) -> str:
+        """The canonical name as ontodag's surface layer would show it.
+
+        `surface.render` is a pure function of the canonical name plus the
+        declarations that give it a kind, so the DAG has to be passed — and it
+        only ever emits spellings the dimensions grammar already accepts
+        ("policy picks, vocabulary defines"). That is what makes this safe
+        here: a rendered name resolves through `closure()` unchanged, because
+        the sugar path already canonicalizes it. Two examples of the win:
+
+            time(2026-08-01T00:00:00Z..2026-08-31T23:59:59Z) -> time(2026-08)
+            weight(9/2kg)                                    -> weight(4500g)
+
+        The second also drops the '/' that forced percent-encoding, so most
+        listings no longer need it — but not all (`length(10/33m)` fits no unit
+        exactly and keeps its rational), which is why names.py stays the
+        backstop rather than being replaced.
+        """
+        try:
+            return _surface.render(attr, dag=self._dag)
+        except Exception:
+            # Display must never be able to make a directory unlistable.
+            return attr
 
     def generation(self) -> int:
         return self._generation

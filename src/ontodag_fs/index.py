@@ -69,6 +69,20 @@ class ConceptIndex(Protocol):
         """Look an object up by its Swarm reference."""
         ...
 
+    def display_name(self, attr: str) -> str:
+        """A readable spelling of an attribute name, for listings only.
+
+        Display-only and lossy in one direction: the returned spelling must
+        still resolve through `closure()` to the same concept, but it is never
+        an identity and must never be stored or compared against an intent.
+        Identity for implementations without a surface layer.
+
+        Rendering lives behind this seam because it needs the DAG (a name's
+        kind comes from its declarations), and fs.py only ever sees a
+        ConceptIndex — DESIGN_DECISIONS.md #13.
+        """
+        ...
+
     def generation(self) -> int:
         """Monotonic counter bumped on every mutation, for cache
         invalidation (SPEC §4)."""

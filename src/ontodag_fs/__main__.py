@@ -40,7 +40,7 @@ except Exception:  # pragma: no cover
 
 
 HELP_TEXT = """\
-Usage: odag-fs [-s STORE] [--bee-api URL] [<command> [args]]
+Usage: odag-fs [-s STORE] [--bee-api URL] [--raw] [<command> [args]]
 
 Commands:
   ls [-l] [PATH]           list a concept directory
@@ -66,6 +66,9 @@ Options:
   -s, --store STORE   one-off store override: a file path or swarm:NAME
   --bee-api URL       Bee API URL (default: $BEE_API, configured bee_api,
                       or localhost)
+  --raw               list canonical value names (weight(9%2F2kg)) instead
+                      of readable ones (weight(4500g)); same as
+                      ONTODAG_SURFACE=0. Every spelling resolves either way.
 """
 
 
@@ -75,16 +78,18 @@ Options:
 class Session:
     """One loaded store + a current directory, shared across commands."""
 
-    def __init__(self, store_spec: str | None, bee_api: str | None):
+    def __init__(self, store_spec: str | None, bee_api: str | None,
+                 raw: bool = False):
         self.store_spec = store_spec
         self.bee_api = bee_api
+        self.raw = raw
         self.cwd = "/"
         self._fs = None
 
     @property
     def fs(self):
         if self._fs is None:
-            self._fs = _build_fs(self.store_spec, self.bee_api)
+            self._fs = _build_fs(self.store_spec, self.bee_api, self.raw)
         return self._fs
 
     def switch(self) -> None:
@@ -102,7 +107,7 @@ class Session:
         return "/" if norm in (".", "//") else norm
 
 
-def _build_fs(store_spec: str | None, bee_api: str | None):
+def _build_fs(store_spec: str | None, bee_api: str | None, raw: bool = False):
     # odag's CLI module is the authority on store specs/config; reusing its
     # (private) helpers is accepted milestone tooling — the real CLI (v1)
     # gets a public seam.
@@ -115,7 +120,8 @@ def _build_fs(store_spec: str | None, bee_api: str | None):
     dag = _make_backend(_resolve_store(store_spec)).load()
     api = bee_api or os.environ.get("BEE_API") or _read_config().get("bee_api")
     swarm = SwarmFileSystem(api_url=api) if api else SwarmFileSystem()
-    return OntoDAGFileSystem(index=OntoDAGIndex(dag), swarm=swarm)
+    return OntoDAGFileSystem(index=OntoDAGIndex(dag), swarm=swarm,
+                             render_names=False if raw else None)
 
 
 # ---------------------------------------------------------------- commands
@@ -246,6 +252,10 @@ def _build_command_parser(with_globals: bool) -> argparse.ArgumentParser:
         parser.add_argument("--bee-api", default=None,
                             help="Bee API URL for the bytestore (default: "
                                  "$BEE_API, configured bee_api, or localhost)")
+        parser.add_argument("--raw", action="store_true",
+                            help="show canonical value names in listings "
+                                 "(weight(9%%2F2kg)) instead of readable ones "
+                                 "(weight(4500g)); same as ONTODAG_SURFACE=0")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     p = sub.add_parser("ls", help="list a concept directory")
@@ -350,7 +360,8 @@ def run_stream(session: Session, stream, interactive: bool) -> int:
 def main(argv=None) -> None:
     parser = _build_command_parser(with_globals=True)
     args = parser.parse_args(argv)
-    session = Session(getattr(args, "store", None), getattr(args, "bee_api", None))
+    session = Session(getattr(args, "store", None), getattr(args, "bee_api", None),
+                      getattr(args, "raw", False))
 
     if args.command is None:
         sys.exit(run_stream(session, sys.stdin, interactive=sys.stdin.isatty()))

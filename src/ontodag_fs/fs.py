@@ -11,6 +11,7 @@ v0 surface: read-only. All write methods raise NotImplementedError.
 
 from __future__ import annotations
 
+import os
 import posixpath
 import re
 import time
@@ -152,11 +153,20 @@ class OntoDAGFileSystem(AbstractFileSystem):
         swarm,
         listing_ttl: float = 30.0,
         listing_cache_size: int = 1024,
+        render_names: bool | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.index = index
         self.swarm = swarm
+        # Readable directory names for typed values (SPEC § 2 Naming).
+        # ontodag's surface layer calls for "one tool with an honest switch"
+        # (its SURFACE_LAYER.md §7), so: explicit argument, else $ONTODAG_SURFACE
+        # — the same variable odag reads — else on. A mount has no tty to test,
+        # and it is only ever read by humans, so `auto` means on here.
+        if render_names is None:
+            render_names = os.environ.get("ONTODAG_SURFACE", "auto") != "0"
+        self.render_names = render_names
         self._concepts = _TTLCache(listing_cache_size, listing_ttl)
         self._extents = _TTLCache(listing_cache_size, listing_ttl)
         self._sizes: dict[str, int] = {}  # ref -> size; content-addressed, immutable
@@ -176,6 +186,19 @@ class OntoDAGFileSystem(AbstractFileSystem):
     def _generation(self) -> int:
         gen = getattr(self.index, "generation", None)
         return gen() if callable(gen) else 0
+
+    def _shown(self, attr: str) -> str:
+        """A child attribute as it appears in a listing: rendered, then encoded.
+
+        Both directions compose — `decode` recovers the rendered spelling and
+        `closure` accepts it, since rendering only picks spellings the grammar
+        already takes. Rendering is display-only: the coverage rule and every
+        intent stay on canonical names."""
+        if self.render_names:
+            display = getattr(self.index, "display_name", None)
+            if callable(display):
+                attr = display(attr)
+        return encode_component(attr)
 
     def _closure(self, attrs: Iterable[str], path: str) -> frozenset[str]:
         attrs = [decode_component(a) for a in attrs]
@@ -360,7 +383,7 @@ class OntoDAGFileSystem(AbstractFileSystem):
             ]
 
         children, named = self._concept_listing(intent)
-        entries = [self._dir_entry(f"{base}/{encode_component(c)}") for c in children]
+        entries = [self._dir_entry(f"{base}/{self._shown(c)}") for c in children]
         entries.append(self._dir_entry(f"{base}/.all"))
         if not parts:
             entries.append(self._dir_entry("/.swarm"))

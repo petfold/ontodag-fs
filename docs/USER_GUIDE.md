@@ -465,21 +465,37 @@ Four things to know (quote the parentheses in a shell):
   directory; listings show the stored form. Values are exact rationals of the
   SI unit, so nothing is rounded and no precision is refused —
   `weight(0.0005g)` is a perfectly ordinary value.
-- **A `%2F` in a listing is a slash in the name.** An exact rational that is
-  not a whole number keeps its fraction: 4.5 kg is stored as `weight(9/2kg)`.
-  A path component cannot contain `/`, so listings show it percent-encoded
-  and that spelling is what resolves:
+- **Listings are readable, storage is exact.** A value is stored in the form
+  the arithmetic needs and *shown* in the form you'd write. 4.5 kg is stored as
+  `weight(9/2kg)` and listed as `weight(4500g)`; a month is stored as an
+  instant range and listed as `time(2026-08)`:
 
   ```console
   $ ls '/parcel/weight'
-  weight(9%2F2kg)/  weight(9kg)/  .all/
-  $ ls '/parcel/weight/weight(9%2F2kg)/.all'
-  mid.txt
-  $ ls '/parcel/weight(4.5kg)/.all'    # or just ask in friendly units
-  mid.txt
+  weight(4500g)/  weight(9kg)/  .all/
+  $ ls '/parcel/time'
+  time(2026-08)/  time(2027)/  .all/
   ```
 
-  Typing the friendly form is usually easier, and always equivalent.
+  Every spelling of a value resolves — the readable one, the stored one, and
+  whatever you originally typed — so `weight(4500g)`, `weight(9/2kg)` and
+  `weight(4.5kg)` are three names for one directory. `--raw` (or
+  `ONTODAG_SURFACE=0`) shows stored names instead, which is occasionally what
+  you want when comparing against `odag` output.
+- **A `%2F` in a listing is a slash in the name.** Some exact values are not a
+  whole number of *any* unit — the shaku is exactly 10/33 m — so the fraction
+  survives into the displayed name. A path component cannot contain `/`, so it
+  appears percent-encoded, and that spelling is what resolves:
+
+  ```console
+  $ ls '/parcel/length'
+  length(10%2F33m)/  length(2m)/  .all/
+  $ ls '/parcel/length/length(10%2F33m)/.all'
+  shaku.txt
+  ```
+
+  With readable names on this is rare; with `--raw` it is routine, since every
+  non-whole rational then shows its fraction.
 - **Order still never matters**, and the dimension name is implied:
   `/weight/weight(..5kg)` is the same place as `/weight(..5kg)`.
 

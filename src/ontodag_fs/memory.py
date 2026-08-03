@@ -136,5 +136,10 @@ class InMemoryIndex:
             return ObjectInfo(ref=ref, label=label, intent=frozenset())
         return self._info(ref)
 
+    def display_name(self, attr: str) -> str:
+        """Identity: there are no typed values here to render (no DAG to
+        declare dimensions in), so canonical *is* the readable form."""
+        return attr
+
     def generation(self) -> int:
         return self._generation

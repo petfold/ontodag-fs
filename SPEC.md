@@ -97,6 +97,15 @@ reachability, and `.all/` visibility are stable throughout.
 
 ### Naming / collision policy
 
+**Readable value names (2026-08-03).** A child attribute is shown as
+`ontodag.surface.render` spells it — `time(2026-08)` for a month's instant
+range, `weight(4500g)` for `weight(9/2kg)`. Display-only: intents, the coverage
+rule and every comparison stay on canonical names. Safe because rendering only
+emits spellings the dimensions grammar already accepts, so a shown name
+resolves through `closure()` with no elaboration step on this side. The switch
+is `render_names=` on the constructor, else `$ONTODAG_SURFACE` (`0` = off),
+else on; the CLI exposes it as `--raw`. Rendering happens *before* encoding.
+
 **Path-component encoding.** A DAG name is an arbitrary string; a path
 component cannot hold `/` or NUL. Every name that becomes part of an entry's
 `name` — a child attribute, a display label, a canonical typed value — is

@@ -232,6 +232,51 @@ authoritative for anything.
     separate escaping rules, and this repo is one of them. That fan-out is now
     a test (`tests/test_names.py`), not a memory.
 
+21. **Listings render, storage stays canonical** (decided 2026-08-03, adopting
+    `ontodag.surface`). Directory names for typed values are shown as ontodag's
+    surface layer spells them: `time(2026-08)` rather than the instant range,
+    `weight(4500g)` rather than `weight(9/2kg)`. Three things made this cheap
+    and safe, and they are the reason to prefer it over inventing a display
+    form here (#20's option (c)):
+
+    - **Rendering only picks spellings the grammar already accepts.** So a
+      shown name resolves through the existing sugar path — `closure()` is
+      untouched and `elaborate()` is never called on this side. Display became
+      a one-line change at the point where entry names are built.
+    - **It is a pure function of the canonical name plus the declarations that
+      give it a kind**, which means it needs the DAG. That is why it sits
+      behind the ConceptIndex seam as `display_name` (#13) rather than in
+      fs.py: `InMemoryIndex` returns identity, so the two implementations stay
+      interchangeable.
+    - **It is lossy in the harmless direction.** `elaborate(render(t)) == t`
+      holds; `render(elaborate(s)) == s` is deliberately not promised. So
+      rendered names may never be stored or compared: intents, the coverage
+      rule and the disambiguator all stay on canonical names. A rendered name
+      in an intent would silently stop matching the DAG.
+
+    Rendering runs *before* encoding, and mostly retires it: the common
+    rationals become whole numbers of a smaller unit. `length(10/33m)` is the
+    case that proves both layers are needed — no unit makes it whole, so it
+    reaches the path as `length(10%2F33m)`.
+
+    Per ontodag's SURFACE_LAYER.md §7 ("one tool with an honest switch") the
+    behaviour is switchable: `render_names=` on the constructor, else
+    `$ONTODAG_SURFACE` (the same variable odag reads, `0` = off), else on — a
+    mount has no tty to test and is only ever read by humans, so ontodag's
+    `auto` means on here. `odag-fs --raw` is the CLI face of it. Note the
+    consequence for `info()`: it follows §7's Web/REST guidance rather than its
+    CLI guidance — the entry `name` is rendered because it is a path, while
+    `intent` stays canonical because it is data. Both are always present.
+
+    One limitation this surfaced, recorded rather than fixed: because asserted
+    attribute names must stay `/`-free (#20), a value can be *filed* only in a
+    spelling without a slash. `weight(4.5kg)` works and stores as
+    `weight(9/2kg)`; `weight(1/3kg)` cannot be asserted through this repo's
+    builder at all, though it browses and resolves fine once ontodag puts it
+    there. That is consistent with the repo not editing the lattice, so it has
+    not been treated as a bug — revisit if filing by rational spelling is ever
+    wanted.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context

@@ -144,18 +144,47 @@ class TestFilingUnderSugar:
         assert "mid.txt" in names
 
     def test_rational_value_is_reachable_under_its_listed_name(self, market):
-        """A canonical name containing '/' is not a path component, so listings
-        show it percent-encoded — and the shown name must resolve. Before the
-        encoding layer, `ls` emitted an entry its own `isdir` denied."""
+        """A canonical name containing '/' is not a path component, and whatever
+        a listing shows must resolve. Before the encoding layer, `ls` emitted an
+        entry its own `isdir` denied.
+
+        Since rendering was adopted the *shown* name is usually the readable one
+        (`weight(4500g)`) rather than the encoded canonical — see
+        tests/test_surface.py. Both spellings resolve; the invariant under test
+        here is that every listed entry does."""
         market.index.add_object("cd" * 32, "mid.txt", {"parcel", "weight(4.5kg)"})
         listed = [e for e in market.fs.ls("/parcel/weight")
                   if "weight(" in e.rsplit("/", 1)[-1]]
-        assert "/parcel/weight/weight(9%2F2kg)" in listed
         for entry in listed:
             assert market.fs.isdir(entry), entry
+        assert "/parcel/weight/weight(4500g)" in listed          # rendered
+        assert market.fs.isdir("/parcel/weight/weight(9%2F2kg)")  # encoded
         names = {e.rsplit("/", 1)[-1]
                  for e in market.fs.ls("/parcel/weight/weight(9%2F2kg)/.all")}
         assert names == {"mid.txt"}
         # the encoded path and the sugar path denote the same concept
         assert market.fs.info("/parcel/weight/weight(9%2F2kg)")["intent"] == \
             market.fs.info("/parcel/weight(4.5kg)")["intent"]
+
+    def test_raw_listing_shows_the_encoded_canonical(self):
+        """With rendering off, the encoding layer is what carries the name —
+        so it stays under test in its own right."""
+        dag = OntoDAG()
+        index = OntoDAGIndex(dag)
+        for name, parents in {"dimension": [], "linear-dimension": ["dimension"],
+                              "weight": ["linear-dimension"], "parcel": []}.items():
+            index.add_attribute(name, parents)
+        store: dict[bytes, bytes] = {}
+        for data, label, value in ((b"a", "mid.txt", "weight(4.5kg)"),
+                                   (b"b", "nine.txt", "weight(9kg)")):
+            index.add_object(seed(store, data), label, {"parcel", value})
+        fs = OntoDAGFileSystem(
+            index=index,
+            swarm=SwarmFileSystem(client=FakeSwarmClient(store),
+                                  skip_instance_cache=True),
+            render_names=False,
+        )
+        shown = {e.rsplit("/", 1)[-1] for e in fs.ls("/parcel/weight")
+                 if "weight(" in e}
+        assert shown == {"weight(9%2F2kg)", "weight(9kg)"}
+        assert fs.isdir("/parcel/weight/weight(9%2F2kg)")

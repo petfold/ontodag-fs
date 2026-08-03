@@ -126,15 +126,24 @@ no DAG to declare dimensions in. The path semantics as implemented:
   `ls` under a virtual interval dir shows present matching values plus
   objects. Sort dimension listings by value (registry order), not
   lexicographically.
-- **Sugar on lookup, canonical on display.** Accept `weight(3000g)` in a path
-  and resolve to the canonical `weight(3kg)` (like case-insensitive lookup);
-  readdir shows canonical names, percent-encoded where the canonical form
-  needs it. Note hard rule 1 is untouched: it governs *object* labels;
-  attribute names are identities, and canonical strings are the real directory
-  names. Friendly display names remain a later, display-only layer —
-  `ontodag.surface` (shipped 0.9.0) is the tool for it, and it is what would
-  turn `time(2026-08-01T00:00:00Z..2026-08-31T23:59:59Z)` back into
-  `time(2026-08)` in a listing. Not adopted yet.
+- **Sugar on lookup, readable on display** (the second half adopted
+  2026-08-03). Accept `weight(3000g)` in a path and resolve to the canonical
+  `weight(3kg)` (like case-insensitive lookup). readdir shows the name as
+  `ontodag.surface.render` spells it — `time(2026-08)`, not
+  `time(2026-08-01T00:00:00Z..2026-08-31T23:59:59Z)` — percent-encoded after
+  rendering, where the result still needs it. Note hard rule 1 is untouched: it
+  governs *object* labels; attribute names are identities, and canonical
+  strings remain the stored names and the only thing intents ever contain.
+
+  What made this a five-line change rather than a naming project: render only
+  ever picks a spelling the dimensions grammar already accepts ("policy picks,
+  vocabulary defines"), so a rendered name resolves through the existing sugar
+  path with no elaboration step on this side, and `elaborate` is never called
+  here. It also mostly retires the `%2F` escape as a side effect —
+  `weight(9/2kg)` renders to `weight(4500g)` — leaving encoding as the backstop
+  for values no unit makes whole (`length(10/33m)`). Per ontodag's
+  SURFACE_LAYER.md §7 there is an honest switch: `render_names=`,
+  `$ONTODAG_SURFACE`, `odag-fs --raw`.
 - **Filing hits ontodag's new boundary checks**: filing under provably
   disjoint same-dimension components (`/weight(..2000g)/weight(3000g..)/`)
   raises ontodag's disjoint-parents guard → EINVAL; as a read query the same
