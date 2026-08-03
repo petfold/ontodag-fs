@@ -43,7 +43,7 @@ dependencies = [
     # Raise it when ontodag's release gate has run this repo's suite against the
     # candidate (ontodag .github/workflows/publish.yml, job `downstream`) — the
     # ceiling is the human confirmation that it passed, not busywork.
-    "ontodag>=0.13.0,<0.14.0",
+    "ontodag>=0.13.0,<0.15.0",
     "swarmfs>=0.4.0",  # _read_reference / reader.bytes_size, the raw-ref reads
 ]
 
