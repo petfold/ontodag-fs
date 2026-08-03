@@ -440,7 +440,7 @@ with fs.open("/measurements/2026/data.csv") as f:
 
 ---
 
-### Typed values in paths (ontodag ≥ 0.4.0)
+### Typed values in paths
 
 If the catalogue declares a **dimension** — a category placed under one of
 ontodag's kind categories, see its User Guide §4.7 — then values like
@@ -451,19 +451,35 @@ can simply ask for*:
 $ ls '/parcel/weight(..5kg)/.all'      # everything at most 5 kg
 light.txt
 $ ls '/weight'                         # the values actually in use
-weight(3000000mg)/  weight(9000000mg)/  .all/
+weight(3kg)/  weight(9kg)/  .all/
 ```
 
-Three things to know (quote the parentheses in a shell):
+Four things to know (quote the parentheses in a shell):
 
 - **Threshold directories are virtual.** `/parcel/weight(..5kg)` exists for
   any well-formed bound — no one had to create it, and listing it creates
-  nothing. Misspell the value (`weight(3zz)`) and you get a plain
-  file-not-found.
+  nothing. Misspell the value (`weight(3zz)`, `weight(nonsense)`) and you get
+  a plain file-not-found.
 - **Friendly units work everywhere, canonical names are what you see.**
   `weight(3kg)`, `weight(3000g)` and `weight(3.0kg)` are the same
-  directory; listings show the stored form (`weight(3000000mg)` — exact
-  integers in base units).
+  directory; listings show the stored form. Values are exact rationals of the
+  SI unit, so nothing is rounded and no precision is refused —
+  `weight(0.0005g)` is a perfectly ordinary value.
+- **A `%2F` in a listing is a slash in the name.** An exact rational that is
+  not a whole number keeps its fraction: 4.5 kg is stored as `weight(9/2kg)`.
+  A path component cannot contain `/`, so listings show it percent-encoded
+  and that spelling is what resolves:
+
+  ```console
+  $ ls '/parcel/weight'
+  weight(9%2F2kg)/  weight(9kg)/  .all/
+  $ ls '/parcel/weight/weight(9%2F2kg)/.all'
+  mid.txt
+  $ ls '/parcel/weight(4.5kg)/.all'    # or just ask in friendly units
+  mid.txt
+  ```
+
+  Typing the friendly form is usually easier, and always equivalent.
 - **Order still never matters**, and the dimension name is implied:
   `/weight/weight(..5kg)` is the same place as `/weight(..5kg)`.
 

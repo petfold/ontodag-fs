@@ -98,28 +98,43 @@ no DAG to declare dimensions in. The path semantics as implemented:
 - **Parametric path components are single attribute constraints**, so hard
   rule 3 (no query operators in paths) is *not* violated: `/photo/time(a..b)/`
   is one category whose extension is computed, and concatenation stays AND.
-  The canonical grammar (`(` `)` `..` `x`, digits, unit suffixes) is
-  POSIX-legal in a path component — only the exact components `.` and `..`
-  are special to the kernel, embedded `..` inside a longer name is fine.
   (Interactive shells need quoting for parentheses; annoyance, not blocker.)
+- **The canonical grammar is NOT POSIX-legal — corrected 2026-08-03.** This
+  section originally claimed it was ("only the exact components `.` and `..`
+  are special to the kernel"), which held for registry 2.x, where canonical
+  values were integers in base units. ontodag registry 3.0 made them *reduced
+  rationals of the SI anchor*, so `weight(4.5kg)` stores as `weight(9/2kg)` —
+  and `/` is the one character a path component can never carry. The symptom
+  was a listing that lied: `ls` emitted `weight(9/2kg)` as a directory entry
+  and the same filesystem's `isdir` denied it. Fixed by percent-encoding path
+  components (`names.py`, SPEC § 2 Naming); the hazard is now covered by a
+  name-consumer corpus (`tests/test_names.py`), the sibling of the one ontodag
+  built after its own 0.10.1 post-mortem. Lesson recorded there: a change to
+  the canonical-name grammar is a cross-cutting change, and this repo is one
+  of the consumers.
 - **Virtual directories.** A parametric component need not exist as a node —
   resolution parses it and evaluates the *virtual query term* (ontodag
   DIMENSIONS.md §8). `info()` on a syntactically valid term whose head is a
   declared dimension succeeds; the namespace is infinite but computed on
   demand, which is exactly hard rule 5 (lazy materialization). Malformed
-  parameter, undeclared head, or sub-base precision → FileNotFoundError on
-  read, EINVAL-mapped OSError on write.
+  parameter or undeclared head → FileNotFoundError on read, EINVAL-mapped
+  OSError on write. (Sub-base precision was in that list until registry 3.0
+  made canonical values exact rationals; `weight(0.0005g)` is now an ordinary
+  value, not a boundary error.)
 - **Listings show present values only.** `ls /weight/` is the dimension's
   anchor star (its used values) — never an enumeration of the value space;
   `ls` under a virtual interval dir shows present matching values plus
   objects. Sort dimension listings by value (registry order), not
   lexicographically.
-- **Sugar on lookup, canonical on display.** Accept `weight(3kg)` in a path
-  and resolve to the canonical `weight(3000000mg)` (like case-insensitive
-  lookup); readdir shows canonical names first, friendly display labels are
-  a later, display-only layer. Note hard rule 1 is untouched: it governs
-  *object* labels; attribute names are identities, and canonical strings are
-  the real directory names.
+- **Sugar on lookup, canonical on display.** Accept `weight(3000g)` in a path
+  and resolve to the canonical `weight(3kg)` (like case-insensitive lookup);
+  readdir shows canonical names, percent-encoded where the canonical form
+  needs it. Note hard rule 1 is untouched: it governs *object* labels;
+  attribute names are identities, and canonical strings are the real directory
+  names. Friendly display names remain a later, display-only layer —
+  `ontodag.surface` (shipped 0.9.0) is the tool for it, and it is what would
+  turn `time(2026-08-01T00:00:00Z..2026-08-31T23:59:59Z)` back into
+  `time(2026-08)` in a listing. Not adopted yet.
 - **Filing hits ontodag's new boundary checks**: filing under provably
   disjoint same-dimension components (`/weight(..2000g)/weight(3000g..)/`)
   raises ontodag's disjoint-parents guard → EINVAL; as a read query the same

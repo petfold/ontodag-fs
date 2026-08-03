@@ -20,8 +20,14 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    "ontodag>=0.4.0",  # parametric dimensions: virtual directories need 0.4.0
-    "swarmfs",
+    # 0.10.1 is the floor, not 0.4.0 (which shipped parametric dimensions):
+    # registry 3.0/4.0 changed canonical value names from integers in base
+    # units to reduced rationals of the SI anchor, so `weight(3kg)` is now
+    # canonical and `weight(4.5kg)` stores as `weight(9/2kg)`. Listings, path
+    # resolution and tests all name the current form; against an older ontodag
+    # every typed-value path would resolve to a different node.
+    "ontodag>=0.10.1",
+    "swarmfs>=0.4.0",  # _read_reference / reader.bytes_size, the raw-ref reads
 ]
 
 [project.optional-dependencies]
@@ -29,7 +35,17 @@ test = [
     "pytest",
     "pytest-asyncio",
     "hypothesis",
+    # tests/test_live_bee.py drives recordstore's BeeBytesStore directly; it
+    # skips without BEE_API/BEE_BATCH, but the import must resolve to collect.
+    "recordstore[bee,stamps]",
 ]
+# The `swarm:NAME` store for `odag-fs --store` goes through ontodag's CLI
+# backend, which reaches a Bee node via recordstore's BeeBytesStore and
+# resolves `bee_batch = auto` through swarmfs. ontodag's base install carries
+# none of that since it dropped its third-party dependencies, so the swarm
+# path has to be asked for by name — without this extra, every command on a
+# swarm store fails at store-open rather than at install.
+swarm = ["ontodag[swarm]"]
 dev = ["ontodag-fs[test]"] # back-compat alias; [test] is the stack-wide name
 
 [project.entry-points."fsspec.specs"]

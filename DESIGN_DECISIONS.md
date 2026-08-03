@@ -189,6 +189,49 @@ authoritative for anything.
     Book-FCA stays recoverable (an object's ancestor set is its row in the
     formal context); inductive FCA is mdl-fca's territory, upstream.
 
+20. **Path components are percent-encoded** (decided 2026-08-03, forced by
+    ontodag registry 3.0). Canonical typed values became reduced rationals of
+    the SI anchor, so `weight(4.5kg)` is stored as `weight(9/2kg)` — a name
+    holding the one character a POSIX path component cannot carry. `ls`
+    duly emitted a directory entry that the same filesystem's `isdir` and `ls`
+    denied. Three options were weighed:
+
+    (a) *Enforce the old rule* — refuse to file a value whose canonical name
+    contains `/`. Faithful to SPEC §1 as written and a tiny diff, but it makes
+    an ordinary 4.5 kg parcel unfileable, reversing a capability ontodag
+    deliberately added (exact rationals, nothing refused for precision).
+    Rejected: the filesystem does not get to veto the index's arithmetic.
+
+    (b) *Percent-encode path components* — chosen. `%`→`%25`, `/`→`%2F`,
+    NUL→`%00`; decode on lookup. One mechanism, reversible
+    (`decode(encode(s)) == s`, the same shape as ontodag's
+    `elaborate(render(t)) == t`), and it closes the whole class rather than
+    the rational case: object **labels** could always contain `/` — they are
+    display metadata, never validated (#5) — which was a latent form of the
+    same bug. Every name free of `%` and `/` encodes to itself, so no path
+    that resolved before resolves differently.
+
+    (c) *Decimal display when the rational terminates*, encoding otherwise.
+    Prettiest listings, but two mechanisms, and the shown form would be
+    neither ontodag's canonical name nor its `surface.render` output — this
+    repo would own a third naming form. Deferred, not rejected: it becomes
+    reasonable if and when `ontodag.surface` is adopted as a display layer
+    (ROADMAP), and then it should follow `render`, not invent a form.
+
+    Consequences. Attribute *assertion* keeps the stricter rule (asserted
+    names must still be `/`-free — human-chosen vocabulary should stay
+    path-clean); only computed names and labels rely on the encoding. Entry
+    `name` fields are encoded because they are paths; `label` and `intent`
+    fields stay raw because they are data. `/.swarm/` components address
+    swarmfs's namespace, not the DAG's, and are passed through untouched.
+    Decoding is strict — only the three triplets — so a raw name typed into a
+    path still resolves (`/100%`), at the price of one acknowledged ambiguity:
+    a name that itself contains a percent triplet resolves in favour of the
+    encoded reading. The general lesson is ontodag's own, from its 0.10.1
+    post-mortem: the canonical-name grammar fans out into consumers with
+    separate escaping rules, and this repo is one of them. That fan-out is now
+    a test (`tests/test_names.py`), not a memory.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context

@@ -22,6 +22,7 @@ from fsspec.asyn import sync
 from fsspec.spec import AbstractBufferedFile
 
 from .index import ConceptIndex, ObjectInfo, UnknownAttributeError
+from .names import decode_component, encode_component
 
 _SWARM_REF_RE = re.compile(r"^[0-9a-f]{64}(?:[0-9a-f]{64})?$", re.IGNORECASE)
 # label~shorthash disambiguation: 8+ hex chars after the final '~' of the stem
@@ -163,6 +164,12 @@ class OntoDAGFileSystem(AbstractFileSystem):
     # ------------------------------------------------------------- plumbing
 
     def _parts(self, path) -> list[str]:
+        """Path components *as typed* — still percent-encoded.
+
+        Decoding happens where a component is consumed as a DAG name
+        (`_closure`, `_lookup_file`), not here: `/.swarm/` components address
+        swarmfs's namespace rather than the DAG's and must pass through
+        untouched (names.py § Scope)."""
         path = self._strip_protocol(path)
         return [p for p in path.split("/") if p]
 
@@ -171,7 +178,7 @@ class OntoDAGFileSystem(AbstractFileSystem):
         return gen() if callable(gen) else 0
 
     def _closure(self, attrs: Iterable[str], path: str) -> frozenset[str]:
-        attrs = list(attrs)
+        attrs = [decode_component(a) for a in attrs]
         if any(a.startswith(".") for a in attrs):
             raise FileNotFoundError(path)  # reserved namespace, never an attribute
         try:
@@ -238,6 +245,7 @@ class OntoDAGFileSystem(AbstractFileSystem):
         *dir_parts, base = parts
         if base in (".all", ".swarm", ".unfiled") or not base:
             raise FileNotFoundError(path)
+        base = decode_component(base)  # a shown name → the label it denotes
 
         if dir_parts and dir_parts[0] == ".unfiled":
             if len(dir_parts) != 1:
@@ -321,7 +329,10 @@ class OntoDAGFileSystem(AbstractFileSystem):
     def _ls_unfiled(self, parts: list[str]) -> list[dict]:
         if len(parts) == 1:
             named = disambiguate(self.index.unfiled())
-            return [self._file_entry(f"/.unfiled/{n}", o) for n, o in named.items()]
+            return [
+                self._file_entry(f"/.unfiled/{encode_component(n)}", o)
+                for n, o in named.items()
+            ]
         obj = self._lookup_file(parts, self._join(parts))
         return [self._file_entry(self._join(parts), obj)]
 
@@ -339,17 +350,25 @@ class OntoDAGFileSystem(AbstractFileSystem):
             return [self._file_entry(path, obj)]
 
         base = "" if path == "/" else path
+        # children and labels are DAG-side names; the entry `name` is a path,
+        # so each becomes exactly one encoded component (names.py)
         if want_all:
             named = self._extent_listing(intent)
-            return [self._file_entry(f"{base}/{n}", o) for n, o in named.items()]
+            return [
+                self._file_entry(f"{base}/{encode_component(n)}", o)
+                for n, o in named.items()
+            ]
 
         children, named = self._concept_listing(intent)
-        entries = [self._dir_entry(f"{base}/{c}") for c in children]
+        entries = [self._dir_entry(f"{base}/{encode_component(c)}") for c in children]
         entries.append(self._dir_entry(f"{base}/.all"))
         if not parts:
             entries.append(self._dir_entry("/.swarm"))
             entries.append(self._dir_entry("/.unfiled"))
-        entries.extend(self._file_entry(f"{base}/{n}", o) for n, o in named.items())
+        entries.extend(
+            self._file_entry(f"{base}/{encode_component(n)}", o)
+            for n, o in named.items()
+        )
         return entries
 
     # ----------------------------------------------------------------- info

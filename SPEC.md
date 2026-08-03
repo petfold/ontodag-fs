@@ -7,9 +7,12 @@ ROADMAP.md).
 ## 1. Data model
 
 - **Attribute**: a globally-named tag (string). The only global namespace.
-  Constraint: must not start with `.`, must not contain `/`. (Polysemy —
-  e.g. `jaguar` the car vs the animal — is acknowledged and deferred;
-  see DESIGN_DECISIONS.md § Deferred.)
+  Constraint on *asserted* names: must not start with `.`, must not contain
+  `/` (`validate_attribute`). Names the index **computes** — canonical forms
+  of typed values — are not so constrained and may contain `/`; they reach a
+  path only through the percent-encoding of § 2 (Naming). (Polysemy — e.g.
+  `jaguar` the car vs the animal — is acknowledged and deferred; see
+  DESIGN_DECISIONS.md § Deferred.)
 - **Concept**: an FCA concept in the OntoDAG lattice — (extent, intent) pair.
 - **Terminology caveat** (for FCA-literate readers): "intent", "extent" and
   "closure" are used here in the *implication/subsumption* sense — closure =
@@ -35,17 +38,23 @@ ROADMAP.md).
   from the name (`weight(..5kg)`, `geo(u2ed)`). Contract extensions, all
   confined to `OntoDAGIndex`:
   - *Sugar on lookup:* the closure holds the canonical name
-    (`weight(3kg)` → `weight(3000000mg)`); the head chain is implied, so
-    `/weight/weight(..5kg)` ≡ `/weight(..5kg)`.
+    (`weight(3000g)` → `weight(3kg)`, `weight(4.5kg)` → `weight(9/2kg)`); the
+    head chain is implied, so `/weight/weight(..5kg)` ≡ `/weight(..5kg)`.
+    Canonical values are reduced rationals of the SI anchor (ontodag registry
+    3.0/4.0), so a canonical name can contain `/` — percent-encoded in paths,
+    per § 2 (Naming).
   - *Virtual directories:* a well-formed term needs no node — resolution
     succeeds, extents are computed, nothing is materialized by reading.
     The namespace is infinite; listings still show only *present* values
     (via member intents), per the lazy-materialization rule.
-  - *Errors:* a malformed parameter under a declared head →
+  - *Errors:* a malformed parameter under a declared head — an unknown unit
+    (`weight(3zz)`) or an unparseable value (`weight(nonsense)`) →
     UnknownAttributeError → ENOENT on the read surface. Undeclared heads
     stay opaque atoms (backward compatible). Write-side guards (disjoint
     same-dimension parents, unit families) surface from `dag.put` in the
-    builder API.
+    builder API. Precision below the old base unit is *not* an error:
+    canonical values are exact rationals, so `weight(0.0005g)` is an ordinary
+    value (`weight(1/2000000kg)`). It was a boundary error before registry 3.0.
   - `InMemoryIndex` does not support dimensions (no DAG to declare them in);
     the interchangeability contract covers the non-parametric surface only.
 
@@ -87,6 +96,19 @@ refining sibling makes the child directory appear); its object concept,
 reachability, and `.all/` visibility are stable throughout.
 
 ### Naming / collision policy
+
+**Path-component encoding.** A DAG name is an arbitrary string; a path
+component cannot hold `/` or NUL. Every name that becomes part of an entry's
+`name` — a child attribute, a display label, a canonical typed value — is
+percent-encoded: `%`→`%25`, `/`→`%2F`, NUL→`%00`, everything else byte-identical.
+Lookup decodes the three triplets in one pass. The law is
+`decode(encode(s)) == s` for every `s` (mirroring ontodag's
+`elaborate(render(t)) == t`), and the invariant it buys is that **a name shown
+in a listing resolves**. Decoding is strict, so a raw name typed straight into
+a path still works (`/100%`); names containing a percent triplet resolve in
+favour of the encoded reading. The `label` and `intent` fields of a listing are
+data, not paths, and stay raw. `/.swarm/` components address swarmfs's
+namespace and pass through untouched. See `names.py`, `tests/test_names.py`.
 
 Within any single listing, if an object's `label` is unique → shown as-is.
 If two or more objects share a label in the same listing → each is shown as

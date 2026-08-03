@@ -35,24 +35,33 @@ class OntoDAGIndex:
 
     # ---------------------------------------------------------- dimensions
     #
-    # ontodag >= 0.4.0 parametric terms (weight(..5kg), geo(u2ed)) are single
-    # attribute constraints whose subsumption is computed from the name —
+    # Parametric terms (weight(..5kg), geo(u2ed)) are single attribute
+    # constraints whose subsumption is computed from the name —
     # ROADMAP § "Upstream: ontodag dimension lattices". A term of a declared
     # dimension is a valid attribute even when no node exists (a VIRTUAL
     # directory: infinite namespace, computed on demand — lazy
     # materialization is already the house rule). Sugar resolves to the
-    # canonical name on lookup (weight(3kg) -> weight(3000000mg)); listings
+    # canonical name on lookup (weight(3000g) -> weight(3kg)); listings
     # only ever show present values, because `children` reads them from
     # member intents. Only this OntoDAG-backed index supports dimensions;
     # InMemoryIndex has no DAG to declare them in.
+    #
+    # Canonical values are reduced rationals of the SI anchor (ontodag
+    # registry 3.0/4.0), so weight(4.5kg) canonicalizes to weight(9/2kg) —
+    # a name holding a '/'. Nothing here has to care: names.py encodes on the
+    # way into a path and decodes on the way out, so the DAG keeps its real
+    # names (see SPEC § 2 Naming).
 
     def _parametric(self, name: str):
         """(head, kind, canonical) for a parametric term of a *declared*
         dimension; None for opaque names. A malformed parameter under a
         declared head is UnknownAttributeError — the filesystem maps it to
         FileNotFoundError, the right read-side answer."""
+        # Private upstream API (no public equivalent yet), so probe rather than
+        # import: a future ontodag that renames it degrades to opaque names
+        # instead of raising AttributeError on every lookup.
         parse = getattr(self._dag, "_parse_parametric", None)
-        if parse is None:  # pre-0.4.0 ontodag: no dimension support
+        if parse is None:
             return None
         try:
             return parse(name)
