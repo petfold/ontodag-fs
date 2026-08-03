@@ -29,7 +29,18 @@ dependencies = [
     # began persisting node metadata: before it, a file-backed store lost the
     # object marks and display labels this adapter keeps there, and presented
     # as an empty filesystem (tests/test_file_store.py).
-    "ontodag>=0.11.0",
+    # Ceiling as well as floor, and the ceiling is the point. The floor says
+    # what we need; the ceiling says what we have *tested*. ontodag-fs 0.1.0
+    # shipped with `>=0.4.0` and no ceiling, so pip cheerfully installed the
+    # registry-3.0 grammar change into it and every typed-value path resolved
+    # to a node that no longer existed — silently, because a published version
+    # of this package cannot be re-tested against an ontodag released after it.
+    # CI cannot fix that for users; only a ceiling can.
+    #
+    # Raise it when ontodag's release gate has run this repo's suite against the
+    # candidate (ontodag .github/workflows/publish.yml, job `downstream`) — the
+    # ceiling is the human confirmation that it passed, not busywork.
+    "ontodag>=0.11.0,<0.13.0",
     "swarmfs>=0.4.0",  # _read_reference / reader.bytes_size, the raw-ref reads
 ]
 
