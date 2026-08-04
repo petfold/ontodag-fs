@@ -46,6 +46,22 @@ mounting path ontodag-fs will reuse.
 - Classify-by-reference primitive (from `/.swarm/<ref>`).
 - Postage-stamp error surfacing (PermissionError with actionable message).
 - Invariant tests 3, 4, 5, 7.
+- **Locking design (decided 2026-08-04, with ontodag): transient writer
+  windows.** ontodag's `swarm:` stores are local-first (recordstore
+  0.19) and carry a single-writer flock — but the store handle is only
+  needed during hydrate and commit, so ontodag's backend now
+  opens-and-closes around exactly those windows and *nothing holds the
+  lock between them*. For this repo that means: v0 mounts hold no lock
+  at all (odag and a mount interleave freely today), and v0.1 filing
+  must follow the same discipline — each filing operation is one
+  transient window (open → assert/retract via the OntoDAG API → commit →
+  close), with a short retry on `StoreLocked` for momentary overlaps
+  (ontodag's `_LOCK_RETRY` pattern, 5 s). Committing onto a head another
+  writer moved is a record-level rebase for free (EagerOntoDAG stages
+  only records changed since its own hydrate). A read-only localstore
+  mode and a journal-refresh API were considered and rejected as
+  unnecessary: the mount serves from the hydrated in-memory DAG, and
+  "refresh" is rehydration — already the session model.
 
 ## v1 — workflow layer
 
