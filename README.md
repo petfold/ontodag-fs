@@ -109,8 +109,8 @@ DuckDB, …) for free.
 | Repo | Role |
 |---|---|
 | [ontodag](https://github.com/petfold/ontodag) | the category DAG — index and classifier |
-| [swarmfs](https://github.com/petfold/swarmfs) | fsspec backend for Swarm — the bytestore |
-| [recordstore](https://github.com/petfold/recordstore) | versioned key→record store over Swarm — DAG persistence |
+| [swarmfs](https://github.com/petfold/swarmfs) | fsspec backend for Swarm — the bytestore ([REFERENCE](https://github.com/petfold/swarmfs/blob/main/docs/REFERENCE.md), test-pinned) |
+| [recordstore](https://github.com/petfold/recordstore) | versioned key→record store over Swarm — DAG persistence ([REFERENCE](https://github.com/petfold/recordstore/blob/main/docs/REFERENCE.md), test-pinned) |
 | [mdl-fca](https://github.com/petfold/mdl-fca) | MDL/FCA learning over the same DAG (upstream, not a dependency) |
 
 ## Documentation
