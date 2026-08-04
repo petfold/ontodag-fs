@@ -116,6 +116,9 @@ DuckDB, …) for free.
 ## Documentation
 
 - [User Guide](docs/USER_GUIDE.md) — tutorial, setup, worked examples
+- [Reference](docs/REFERENCE.md) — definition-first lookup tables (exports,
+  options, path grammar, errors), pinned against the code by
+  `tests/test_reference.py`; the document to hand to an AI agent
 - [SPEC.md](SPEC.md) — the precise v0/v0.1 contract, method by method
 - [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) — prior art and every decision, with reasoning
 - [ROADMAP.md](ROADMAP.md) — what's in scope now vs later
