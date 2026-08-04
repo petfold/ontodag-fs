@@ -44,7 +44,7 @@ dependencies = [
     # candidate (ontodag .github/workflows/publish.yml, job `downstream`) — the
     # ceiling is the human confirmation that it passed, not busywork.
     "ontodag>=0.13.0,<0.15.0",
-    "swarmfs>=0.4.0",  # _read_reference / reader.bytes_size, the raw-ref reads
+    "swarmfs>=0.8.0",  # read_reference/reference_size, the public raw-ref reads
 ]
 
 [project.optional-dependencies]

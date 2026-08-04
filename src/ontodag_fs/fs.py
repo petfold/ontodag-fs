@@ -19,7 +19,6 @@ from collections import OrderedDict
 from typing import Iterable, Sequence
 
 from fsspec import AbstractFileSystem
-from fsspec.asyn import sync
 from fsspec.spec import AbstractBufferedFile
 
 from .index import ConceptIndex, ObjectInfo, UnknownAttributeError
@@ -233,23 +232,15 @@ class OntoDAGFileSystem(AbstractFileSystem):
             self._extents.put(intent, gen, cached)
         return cached
 
-    # raw byte access; see also the note in _swarm_cat about the private API
+    # raw byte access — swarmfs's public raw-reference surface (0.8.0+),
+    # which goes through its policy reader (verification, local-first)
     def _swarm_cat(self, ref: str, start=None, end=None) -> bytes:
-        # swarmfs exposes raw-reference reads only internally today
-        # (_read_reference goes through its verifying reader); ontodag-fs
-        # needs exactly that primitive, so use it until swarmfs grows a
-        # public one.
-        return sync(self.swarm.loop, self.swarm._read_reference, ref, start, end)
+        return self.swarm.read_reference(ref, start, end)
 
     def _swarm_size(self, ref: str) -> int:
         size = self._sizes.get(ref)
         if size is None:
-
-            async def _sz():
-                reader = await self.swarm._get_reader()
-                return await reader.bytes_size(ref)
-
-            size = sync(self.swarm.loop, _sz)
+            size = self.swarm.reference_size(ref)
             if len(self._sizes) > 65536:
                 self._sizes.clear()
             self._sizes[ref] = size
