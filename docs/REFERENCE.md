@@ -88,10 +88,15 @@ resolves as the attribute for `isdir`/`info`/`ls` and as the object for
 
 ## 7. CLI
 
-`odag-fs [-s STORE] [--bee-api URL] [COMMAND [args]]` — commands `ls`,
-`tree`, `cat`, `info`, `cd`, `pwd`, `mount`, `set`, `help`; no command =
-pipe or interactive prompt. Store specs and `~/.ontodag/config` keys
-(`store`, `bee_api`, `bee_batch`) are shared with `odag`.
+`odag-fs [-s STORE] [--bee-api URL] [--as-of ROOT] [--raw] [COMMAND [args]]`
+— commands `ls`, `tree`, `cat`, `info`, `cd`, `pwd`, `mount`, `set`, `help`;
+no command = pipe or interactive prompt. Store specs and `~/.ontodag/config`
+keys (`store`, `bee_api`, `bee_batch`) are shared with `odag`.
+
+`--as-of ROOT` browses a **past version** of the store — any prefix that
+`odag history` prints. Needs a store that keeps versions (`rs:PATH` or
+`swarm:NAME`); a `.od` file holds one state and says so. Nothing else about
+the view changes, since it is read-only either way.
 
 ## 8. Errors
 

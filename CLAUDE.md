@@ -23,6 +23,27 @@ of local disk.**
   swarmfs and asserts intent ⊇ {a, b} in OntoDAG. Removing it from a concept
   dir retracts that classification only — never bytes (Swarm is immutable).
 
+### Catching up with ontodag (2026-08-06, ontodag 0.16.0)
+
+ontodag 0.16.0 brought a wave of editing/sharing/history features; the honest
+adoption here is **one** of them, because this repo is a *browse* surface:
+`--as-of ROOT` (a global flag, like `-s`/`--raw`) hydrates through ontodag's new
+`Backend.load_at` instead of `load`, so `ls`/`tree`/`cat`/`info`/`mount` show the
+store **as it was**. It fits with zero friction precisely because the view is
+already read-only — a version *is* a root, so browsing the past only means
+hydrating from a different one. Prefix resolution and the "this store keeps no
+versions" error both come from upstream, so the message a user sees is the same
+one `odag --as-of` gives.
+
+Deliberately NOT adopted, and why: `move`/`remove --cone`/`undo`/`redo` all
+*write* (this repo asserts classifications, never store surgery, and moving the
+store's pointer from a mount would surprise every reader of it); `excerpt`/`diff`
+are file-shaped tools for stores, not paths; `overlapping` has no obvious path
+spelling — a candidate set is not a concept, so it would need a reserved
+directory whose semantics nobody has designed (a `.maybe/` sibling of `.all/` is
+the shape, if it is ever wanted). The floor moved to **>=0.16.0** for `load_at`
+and the ceiling to **<0.17.0** (0.16.0's downstream gate passed).
+
 ## Architecture and division of labor
 
 ```
@@ -57,7 +78,7 @@ real API, outside this repo.
 
 | Repo | Role | This repo's relationship |
 |---|---|---|
-| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.13.0,<0.15.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
+| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.16.0,<0.17.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; the floor moved to 0.16.0 on 2026-08-06 for `Backend.load_at`, which `--as-of` uses; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment — 0.16.0's gate passed). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
 | `swarmfs` | fsspec backend for Swarm | dependency — the bytestore. Its authoritative API is the test-pinned [swarmfs REFERENCE.md](https://github.com/petfold/swarmfs/blob/main/docs/REFERENCE.md) (local: `../swarmfs/docs/REFERENCE.md`). The private-`_read_reference` gap was closed 2026-08-04: swarmfs 0.8.0 grew public `read_reference`/`reference_size` (documented in its reference), and this repo's floor moved to `swarmfs>=0.8.0` |
 | `recordstore` | versioned key→record store over Swarm | indirect (via ontodag persistence; live tests use it directly). Authoritative API: the test-pinned [recordstore REFERENCE.md](https://github.com/petfold/recordstore/blob/main/docs/REFERENCE.md) |
 | `mdl-fca` | probabilistic FCA / MDL learning | not a dependency; consumes the same DAG upstream |

@@ -40,7 +40,7 @@ except Exception:  # pragma: no cover
 
 
 HELP_TEXT = """\
-Usage: odag-fs [-s STORE] [--bee-api URL] [--raw] [<command> [args]]
+Usage: odag-fs [-s STORE] [--bee-api URL] [--as-of ROOT] [--raw] [<command>]
 
 Commands:
   ls [-l] [PATH]           list a concept directory
@@ -66,6 +66,10 @@ Options:
   -s, --store STORE   one-off store override: a file path or swarm:NAME
   --bee-api URL       Bee API URL (default: $BEE_API, configured bee_api,
                       or localhost)
+  --as-of ROOT        browse a past version of the store: any prefix that
+                      `odag history` prints. Needs a store that keeps
+                      versions (rs:PATH or swarm:NAME); this view is
+                      read-only anyway, so nothing else changes
   --raw               list canonical value names (weight(9%2F2kg)) instead
                       of readable ones (weight(4500g)); same as
                       ONTODAG_SURFACE=0. Every spelling resolves either way.
@@ -79,17 +83,19 @@ class Session:
     """One loaded store + a current directory, shared across commands."""
 
     def __init__(self, store_spec: str | None, bee_api: str | None,
-                 raw: bool = False):
+                 raw: bool = False, as_of: str | None = None):
         self.store_spec = store_spec
         self.bee_api = bee_api
         self.raw = raw
+        self.as_of = as_of
         self.cwd = "/"
         self._fs = None
 
     @property
     def fs(self):
         if self._fs is None:
-            self._fs = _build_fs(self.store_spec, self.bee_api, self.raw)
+            self._fs = _build_fs(self.store_spec, self.bee_api, self.raw,
+                                 self.as_of)
         return self._fs
 
     def switch(self) -> None:
@@ -107,7 +113,8 @@ class Session:
         return "/" if norm in (".", "//") else norm
 
 
-def _build_fs(store_spec: str | None, bee_api: str | None, raw: bool = False):
+def _build_fs(store_spec: str | None, bee_api: str | None, raw: bool = False,
+              as_of: str | None = None):
     # odag's CLI module is the authority on store specs/config; reusing its
     # (private) helpers is accepted milestone tooling — the real CLI (v1)
     # gets a public seam.
@@ -117,7 +124,12 @@ def _build_fs(store_spec: str | None, bee_api: str | None, raw: bool = False):
 
     from . import OntoDAGFileSystem, OntoDAGIndex
 
-    dag = _make_backend(_resolve_store(store_spec)).load()
+    backend = _make_backend(_resolve_store(store_spec))
+    # A past version browses like any other: the view is read-only anyway, so
+    # `--as-of` costs nothing here but a different root to hydrate from (needs
+    # ontodag >= 0.16, whose backends grew `load_at`). Any prefix `odag history`
+    # prints resolves; a store with no versions says so.
+    dag = backend.load_at(as_of) if as_of else backend.load()
     api = bee_api or os.environ.get("BEE_API") or _read_config().get("bee_api")
     swarm = SwarmFileSystem(api_url=api) if api else SwarmFileSystem()
     return OntoDAGFileSystem(index=OntoDAGIndex(dag), swarm=swarm,
@@ -252,6 +264,11 @@ def _build_command_parser(with_globals: bool) -> argparse.ArgumentParser:
         parser.add_argument("--bee-api", default=None,
                             help="Bee API URL for the bytestore (default: "
                                  "$BEE_API, configured bee_api, or localhost)")
+        parser.add_argument("--as-of", default=None, metavar="ROOT",
+                            help="browse a past version of the store instead "
+                                 "of its current state: any prefix `odag "
+                                 "history` prints. Read-only, like every other "
+                                 "view here")
         parser.add_argument("--raw", action="store_true",
                             help="show canonical value names in listings "
                                  "(weight(9%%2F2kg)) instead of readable ones "
@@ -361,7 +378,7 @@ def main(argv=None) -> None:
     parser = _build_command_parser(with_globals=True)
     args = parser.parse_args(argv)
     session = Session(getattr(args, "store", None), getattr(args, "bee_api", None),
-                      getattr(args, "raw", False))
+                      getattr(args, "raw", False), getattr(args, "as_of", None))
 
     if args.command is None:
         sys.exit(run_stream(session, sys.stdin, interactive=sys.stdin.isatty()))

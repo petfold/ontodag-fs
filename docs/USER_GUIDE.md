@@ -502,6 +502,29 @@ Four things to know (quote the parentheses in a shell):
 This needs the OntoDAG-backed index (the default when you build on a real
 DAG); geo prefixes (`/geo(u2)`) and fits-inside sizes work the same way.
 
+### Browsing an earlier version
+
+If your store keeps versions (`rs:PATH` or `swarm:NAME` — a plain `.od` file
+holds only its current state), you can browse the store *as it was*:
+
+```console
+$ odag history                        # in odag: the versions, newest first
+* 483b7b7a8b06  2026-08-06 13:51  tweety arrives
+  8e637ecc6ad6  2026-08-06 13:51  rex arrives
+
+$ odag-fs ls /bird                    # now
+.all/
+tweety.jpg
+
+$ odag-fs --as-of 8e637ecc6ad6 ls /bird     # before tweety was filed
+.all/
+```
+
+Any prefix `odag history` prints is enough. Nothing else about the view
+changes — it was read-only to begin with, which is exactly why browsing the
+past costs nothing here: a version *is* a root, so this only hydrates from a
+different one. Your store stays where it is (`odag undo` is what moves it).
+
 ## 5. Things that might surprise you (by design)
 
 - **Directories appear only where they help.** A category shows up as a

@@ -72,3 +72,73 @@ def test_batch_stream_all_good_exits_zero(zoo, capsys):
     code = run_stream(session, io.StringIO("ls /\nquit\n"), interactive=False)
     assert code == 0
     assert "animal/" in capsys.readouterr().out
+
+
+# -- browsing a past version (--as-of, ontodag >= 0.16) ----------------------
+
+def _versioned_store(tmp_path):
+    """An `rs:` store with two versions: rex only, then rex and tweety."""
+    from ontodag.__main__ import _make_backend
+
+    from ontodag_fs import OntoDAGIndex
+
+    spec = f"rs:{tmp_path / 'store'}"
+    backend = _make_backend(spec)
+
+    dag = backend.load()
+    index = OntoDAGIndex(dag)
+    for name, parents in (("animal", []), ("dog", ["animal"]),
+                          ("bird", ["animal"])):
+        index.add_attribute(name, parents)
+    index.add_object("aa" * 32, "rex.jpg", {"dog"})
+    backend.save(dag, message="rex arrives")
+    first = dag.store.root
+
+    dag = backend.load()
+    OntoDAGIndex(dag).add_object("bb" * 32, "tweety.jpg", {"bird"})
+    backend.save(dag, message="tweety arrives")
+    return spec, first
+
+
+def test_as_of_browses_the_store_as_it_was(tmp_path, capsys):
+    """A past version reads like any other view — this one is read-only anyway,
+    which is why `--as-of` costs nothing here but a different root to hydrate."""
+    spec, first = _versioned_store(tmp_path)
+
+    session = Session(spec, None)
+    assert dispatch(["ls", "/bird"], session) == 0
+    assert "tweety.jpg" in capsys.readouterr().out
+
+    past = Session(spec, None, as_of=first[:12])       # the prefix history shows
+    assert dispatch(["ls", "/bird"], past) == 0
+    out = capsys.readouterr().out
+    assert "tweety.jpg" not in out                     # it did not exist yet
+    assert dispatch(["ls", "/animal"], past) == 0
+    assert "rex.jpg" in capsys.readouterr().out
+
+
+def test_as_of_leaves_the_store_where_it_is(tmp_path, capsys):
+    spec, first = _versioned_store(tmp_path)
+    past = Session(spec, None, as_of=first)
+    dispatch(["ls", "/animal"], past)
+    capsys.readouterr()
+    current = Session(spec, None)
+    assert dispatch(["ls", "/bird"], current) == 0
+    assert "tweety.jpg" in capsys.readouterr().out
+
+
+def test_an_unknown_version_is_reported(tmp_path, capsys):
+    spec, _ = _versioned_store(tmp_path)
+    session = Session(spec, None, as_of="nosuchroot")
+    assert dispatch(["ls", "/"], session) == 1
+    assert "not a version" in capsys.readouterr().err
+
+
+def test_a_plain_file_store_has_no_versions(tmp_path, capsys):
+    from ontodag.__main__ import _make_backend
+
+    path = tmp_path / "store.od"
+    _make_backend(str(path)).save(__import__("ontodag").OntoDAG())
+    session = Session(str(path), None, as_of="abc")
+    assert dispatch(["ls", "/"], session) == 1
+    assert "no versions" in capsys.readouterr().err
