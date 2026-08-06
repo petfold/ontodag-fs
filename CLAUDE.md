@@ -44,6 +44,26 @@ directory whose semantics nobody has designed (a `.maybe/` sibling of `.all/` is
 the shape, if it is ever wanted). The floor moved to **>=0.16.0** for `load_at`
 and the ceiling to **<0.17.0** (0.16.0's downstream gate passed).
 
+## Release state
+
+**Published 0.3.0 (2026-08-06)**, by tag through the publish workflow, verified
+from PyPI rather than from disk: a fresh venv install, then `--as-of` driven end
+to end against a two-version `rs:` store (`ls /bird` shows `tweety.jpg` now and
+nothing at the earlier root). `CHANGELOG.md` — new in this release, back-filled to
+0.0.1 — is the authoritative history; this is the current state.
+
+- **Range: `ontodag>=0.16.0,<0.17.0`.** The floor is a *use* (`Backend.load_at`,
+  which `--as-of` calls), not a precaution. The ceiling exists because a released
+  consumer cannot be re-tested against a future ontodag, and it is raised **by
+  hand after ontodag's publish workflow's `downstream` job has run this suite
+  against the candidate** — that job is the evidence, the bump is the
+  acknowledgement. 0.16.0's gate passed on 2026-08-06.
+- **swarmfs>=0.8.0** for the public raw-reference surface.
+- Suite: 287 with the Bee gate open, 286 + 1 skip without a node.
+- Still v0 in capability: this is a **read-only view**. Filing through the
+  filesystem (`cp`/`rm`/`mv` as classification) is v0.1 and unbuilt; the lattice
+  itself is edited through ontodag, never through the mount.
+
 ## Architecture and division of labor
 
 ```
