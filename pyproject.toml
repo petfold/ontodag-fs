@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontodag-fs"
-version = "0.2.1"
+version = "0.3.0"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
@@ -20,10 +20,11 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    # 0.13.0 is the floor since 2026-08-03: raised with the ceiling after
-    # ontodag's downstream gate ran this suite against the 0.13.0 candidate
-    # (registry 4.1 — the count kind, additive — and prelude v3). The
-    # original load-bearing reasons for a floor at all date to 0.11.0:
+    # 0.16.0 is the floor since 2026-08-06, and this one is a *use*, not a
+    # precaution: `--as-of` calls ontodag's `Backend.load_at`, added in 0.16.0.
+    # (Before it, the floor was 0.13.0 — registry 4.1's count kind and
+    # prelude v3 — raised alongside the ceiling after each downstream gate.)
+    # The original load-bearing reasons for a floor at all date to 0.11.0:
     # Two reasons, both load-bearing here. Registry 3.0/4.0 changed canonical
     # value names from integers in base units to reduced rationals of the SI
     # anchor, so `weight(3kg)` is now canonical and `weight(4.5kg)` stores as

@@ -126,6 +126,14 @@ Two things came out of the evaluation:
   `backend.record_store()`, or `load(resident=False)`. The library path needs
   nothing: `OntoDAGIndex(LazyOntoDAG(store))` works today.
 
+  **The seam arrived (ontodag 0.16.0, 2026-08-06): `backend.open_store()`** —
+  added upstream for `history`/`undo`, and it is exactly this ask. So a lazy
+  mount is now buildable without private helpers
+  (`OntoDAGIndex(LazyOntoDAG(backend.open_store()))`, closing the window when
+  done). The *reason* not to has not changed and is the one above: `ls /` is
+  where a mount starts, and it costs more lazily than loading the store, so this
+  waits on `ontodag.cones` published indexes rather than on API access.
+
 `ls /` is the outlier and stays one: `children(∅)` runs a cone query per
 candidate attribute, so on a lazy DAG it costs more than loading the store.
 That is what `ontodag.cones` + `LazyOntoDAG(cone_index=...)` is for (375 → 6

@@ -70,6 +70,7 @@ $ odag-fs set store swarm:my-store     # once — the same setting odag uses
 $ odag-fs tree /
 $ odag-fs cat /pet/dog/rex.txt
 $ odag-fs                              # interactive: cd/ls/cat with a > prompt
+$ odag-fs --as-of 8e637ecc6ad6 tree /  # the store as it was (odag history lists roots)
 $ pip install fusepy && odag-fs mount ~/mnt
 ```
 
@@ -80,7 +81,9 @@ worked examples of every capability.
 ## Status
 
 **v0 — read-only view.** Browsing (`ls`, `tree`, `cat`, `info`, FUSE mount)
-is complete and tested. Filing through the filesystem (`cp` into a concept
+is complete and tested, and `--as-of ROOT` browses any past version of a store
+that keeps them (`rs:`/`swarm:`) — a version *is* a root, so this only hydrates
+from a different one. Filing through the filesystem (`cp` into a concept
 directory, `rm` as reclassification, `mv` between concepts) is **v0.1**, in
 progress; today filing is done with a short Python helper (see the User
 Guide). The lattice itself (creating categories) is edited through OntoDAG's
@@ -122,6 +125,7 @@ DuckDB, …) for free.
 - [SPEC.md](SPEC.md) — the precise v0/v0.1 contract, method by method
 - [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) — prior art and every decision, with reasoning
 - [ROADMAP.md](ROADMAP.md) — what's in scope now vs later
+- [CHANGELOG.md](CHANGELOG.md) — what each release changed
 
 ## Development
 

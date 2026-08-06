@@ -277,6 +277,34 @@ authoritative for anything.
     not been treated as a bug — revisit if filing by rational spelling is ever
     wanted.
 
+22. **Browsing a past version is a flag, not a mode** (decided 2026-08-06,
+    adopting ontodag 0.16.0's `--as-of`). `odag-fs --as-of ROOT` hydrates the
+    index from a named past root instead of the store's current one, and
+    everything else — `ls`, `tree`, `cat`, `info`, `mount` — is unchanged.
+
+    Three reasons it stays this small. **A version is a root**, so time travel
+    is not a feature to implement but a different value to hydrate from
+    (ontodag's `Backend.load_at`, whose prefix resolution and "this store keeps
+    no versions" error we inherit verbatim, so the message matches `odag`'s).
+    **This view is already read-only**, so a past version needs no extra
+    safeguards — the awkward part of undo elsewhere (what happens if you write
+    to history?) does not exist here. And **a flag composes with everything**
+    where a mode would multiply: `--as-of X mount ~/mnt` gives a mount of
+    yesterday for free.
+
+    What was deliberately *not* adopted from the same ontodag release, so the
+    question isn't reopened without new information: `move`, `remove --cone`,
+    `undo` and `redo` all **write**, and this repo asserts classifications
+    rather than performing store surgery — moving the store's pointer from
+    under a live mount would surprise every reader of it, which is a
+    coordination problem no filesystem should invent. `excerpt` and `diff` are
+    file-shaped tools *about stores*, and this surface's unit is a path.
+    `overlapping` is the interesting one: a candidate set is genuinely useful
+    but is **not a concept**, so it has no path spelling — the shape would be a
+    reserved sibling of `.all/` (a `.maybe/`), and nobody has designed its
+    semantics (does it recurse? do its children partition?). Left unbuilt with
+    the shape named.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context
