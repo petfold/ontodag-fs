@@ -47,13 +47,20 @@ ceiling is **<0.18.0** since 2026-08-09.
 
 ## Release state
 
-**0.3.1 prepared 2026-08-09** — a pin-only release that raises the ontodag
+**Published 0.3.1 (2026-08-09)** — a pin-only release raising the ontodag
 ceiling to `<0.18.0`, so `pip install ontodag-fs` stops holding ontodag at
-0.16.0. No code changed. Verified before tagging: this suite green against
-released ontodag 0.17.1 (286 passed, 1 skipped), and a fresh venv install of
-the built wheel resolves ontodag 0.17.1 and then *works* — objects filed
-through `OntoDAGIndex.add_object`, `odag-fs tree /` listing them, `ls
-/animal/dog` answering the query the path spells.
+0.16.0. No code changed. Verified from PyPI rather than from disk: a fresh
+venv `pip install "ontodag-fs==0.3.1"` resolves **ontodag 0.17.1**, and the
+pair then *works* — objects filed through `OntoDAGIndex.add_object`,
+`odag-fs tree /` listing them, `ls /animal/dog` answering the query that path
+spells. Before tagging, this suite was green against released 0.17.1 (286
+passed, 1 skipped).
+
+Operational note: the publish job failed once on a **connect timeout to
+`upload.pypi.org`** during the OIDC audience exchange — nothing to do with
+the package. `gh run rerun --failed` was the whole fix. Worth recognising
+rather than re-diagnosing: a failed `publish` after a green `build` is far
+more often the network than the release.
 
 **Published 0.3.0 (2026-08-06)**, by tag through the publish workflow, verified
 from PyPI rather than from disk: a fresh venv install, then `--as-of` driven end
