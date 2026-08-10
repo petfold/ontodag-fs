@@ -42,9 +42,18 @@ are file-shaped tools for stores, not paths; `overlapping` has no obvious path
 spelling — a candidate set is not a concept, so it would need a reserved
 directory whose semantics nobody has designed (a `.maybe/` sibling of `.all/` is
 the shape, if it is ever wanted). The floor moved to **>=0.16.0** for `load_at`
-and the ceiling to **<0.17.0** (0.16.0's downstream gate passed).
+and the ceiling to **<0.17.0** (0.16.0's downstream gate passed); the
+ceiling is **<0.18.0** since 2026-08-09.
 
 ## Release state
+
+**0.3.1 prepared 2026-08-09** — a pin-only release that raises the ontodag
+ceiling to `<0.18.0`, so `pip install ontodag-fs` stops holding ontodag at
+0.16.0. No code changed. Verified before tagging: this suite green against
+released ontodag 0.17.1 (286 passed, 1 skipped), and a fresh venv install of
+the built wheel resolves ontodag 0.17.1 and then *works* — objects filed
+through `OntoDAGIndex.add_object`, `odag-fs tree /` listing them, `ls
+/animal/dog` answering the query the path spells.
 
 **Published 0.3.0 (2026-08-06)**, by tag through the publish workflow, verified
 from PyPI rather than from disk: a fresh venv install, then `--as-of` driven end
@@ -52,12 +61,16 @@ to end against a two-version `rs:` store (`ls /bird` shows `tweety.jpg` now and
 nothing at the earlier root). `CHANGELOG.md` — new in this release, back-filled to
 0.0.1 — is the authoritative history; this is the current state.
 
-- **Range: `ontodag>=0.16.0,<0.17.0`.** The floor is a *use* (`Backend.load_at`,
+- **Range: `ontodag>=0.16.0,<0.18.0`.** The floor is a *use* (`Backend.load_at`,
   which `--as-of` calls), not a precaution. The ceiling exists because a released
   consumer cannot be re-tested against a future ontodag, and it is raised **by
   hand after ontodag's publish workflow's `downstream` job has run this suite
   against the candidate** — that job is the evidence, the bump is the
-  acknowledgement. 0.16.0's gate passed on 2026-08-06.
+  acknowledgement. 0.16.0's gate passed on 2026-08-06; 0.17.0's and
+  0.17.1's on 2026-08-09, and this suite is green against released 0.17.1
+  (286 passed, 1 skipped). Nothing here uses 0.17's additions, so the floor
+  did not move — a ceiling is about what has been *tested*, a floor about
+  what is *used*.
 - **swarmfs>=0.8.0** for the public raw-reference surface.
 - Suite: 287 with the Bee gate open, 286 + 1 skip without a node.
 - Still v0 in capability: this is a **read-only view**. Filing through the
@@ -98,7 +111,7 @@ real API, outside this repo.
 
 | Repo | Role | This repo's relationship |
 |---|---|---|
-| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.16.0,<0.17.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; the floor moved to 0.16.0 on 2026-08-06 for `Backend.load_at`, which `--as-of` uses; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment — 0.16.0's gate passed). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
+| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.16.0,<0.18.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; the floor moved to 0.16.0 on 2026-08-06 for `Backend.load_at`, which `--as-of` uses; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment — the 0.16.0, 0.17.0 and 0.17.1 gates passed). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
 | `swarmfs` | fsspec backend for Swarm | dependency — the bytestore. Its authoritative API is the test-pinned [swarmfs REFERENCE.md](https://github.com/petfold/swarmfs/blob/main/docs/REFERENCE.md) (local: `../swarmfs/docs/REFERENCE.md`). The private-`_read_reference` gap was closed 2026-08-04: swarmfs 0.8.0 grew public `read_reference`/`reference_size` (documented in its reference), and this repo's floor moved to `swarmfs>=0.8.0` |
 | `recordstore` | versioned key→record store over Swarm | indirect (via ontodag persistence; live tests use it directly). Authoritative API: the test-pinned [recordstore REFERENCE.md](https://github.com/petfold/recordstore/blob/main/docs/REFERENCE.md) |
 | `mdl-fca` | probabilistic FCA / MDL learning | not a dependency; consumes the same DAG upstream |

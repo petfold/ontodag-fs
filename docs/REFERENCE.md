@@ -9,7 +9,7 @@ and [swarmfs](https://github.com/petfold/swarmfs/blob/main/docs/REFERENCE.md).
 Tables here are pinned against the code by `tests/test_reference.py` — if a
 name or parameter in this file and the code disagree, the suite fails.
 
-Package version this file describes: `0.3.0`.
+Package version this file describes: `0.3.1`.
 
 ## 1. Vocabulary
 
@@ -27,7 +27,7 @@ Package version this file describes: `0.3.0`.
 
 | command | gives |
 |---|---|
-| `pip install ontodag-fs` | the filesystem + `odag-fs` CLI (deps: fsspec, ontodag ≥ 0.16 &lt; 0.17, swarmfs ≥ 0.8) |
+| `pip install ontodag-fs` | the filesystem + `odag-fs` CLI (deps: fsspec, ontodag ≥ 0.16 &lt; 0.18, swarmfs ≥ 0.8) |
 | `pip install fusepy` | optional: `odag-fs mount` via fsspec's FUSE wrapper |
 
 ## 3. Exports

@@ -12,6 +12,22 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.3.1] — 2026-08-09
+
+### Changed
+
+- **ontodag range is now `>=0.16.0,<0.18.0`** — the ceiling rose because
+  ontodag's release gate ran this suite against both the 0.17.0 and 0.17.1
+  candidates and passed, and because it passes here against released 0.17.1
+  (286 passed, 1 skipped). No code change: the floor stays at 0.16.0, where a
+  *use* put it (`--as-of` calls `Backend.load_at`), while a ceiling records
+  what has been *tested*. Nothing in this repo uses 0.17's additions —
+  `ontodag.browse`, the packaged web app (`odag web`), or `dispatch`'s
+  capturable streams.
+
+  Without this, `pip install ontodag-fs` held ontodag at 0.16.0, so the two
+  could not be installed together at their current versions.
+
 ## [0.3.0] — 2026-08-06
 
 ### Added
