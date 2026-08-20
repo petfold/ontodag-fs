@@ -148,6 +148,11 @@ Sequence: public seam → lazy mount → cone index for the root listing.
   fsspec backend.
 - Query API beyond path syntax (OR/NOT outside paths).
 - Automatic intent extraction hooks (transducer analog; mdl-fca integration).
+  *(2026-08-20: the design for this now exists — ontodag
+  `docs/plans/PROJECTIONS.md`: transducers live with their sources
+  (shelfmark/datacat for files, ucomm bridges for messages), emit JSONL
+  facts into a regenerable `sys:` projection layer, and ontodag-fs's role
+  is browsing the joined overlay view once that seam lands.)*
 - Feeds/mutable roots; ACT-protected objects.
 
 ## Upstream: ontodag dimension lattices (design agreed 2026-07-30)
