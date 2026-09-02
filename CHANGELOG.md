@@ -12,6 +12,15 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.3.3] — 2026-09-02
+
+### Changed
+
+- **ontodag range is now `>=0.16.0,<0.20.0`** — the ceiling rose because
+  ontodag's release gate ran this suite against the 0.19.0 candidate (core
+  pack v2, `ontodag.act`, the Pyodide demo) and it passed unchanged. No
+  code change: 0.19.0 adds surface and moves nothing this package calls.
+
 ## [0.3.2] — 2026-08-20
 
 ### Changed
