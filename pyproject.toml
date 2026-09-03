@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontodag-fs"
-version = "0.3.6"
+version = "0.3.7"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
@@ -53,7 +53,7 @@ dependencies = [
     # 0.17.1 (286 passed, 1 skipped). Nothing here uses 0.17's additions —
     # `ontodag.browse`, the packaged web app, `dispatch`'s out=/err= streams —
     # so the floor stays where a *use* put it.
-    "ontodag>=0.16.0,<0.23.0",
+    "ontodag>=0.16.0,<0.24.0",
     "swarmfs>=0.8.0",  # read_reference/reference_size, the public raw-ref reads
 ]
 
