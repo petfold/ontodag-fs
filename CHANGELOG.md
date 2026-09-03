@@ -12,6 +12,14 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.3.5] — 2026-09-03
+
+### Changed
+
+- **ontodag range is now `>=0.16.0,<0.22.0`** — the ceiling rose because
+  ontodag's release gate ran this suite against the 0.21.0 candidate (the
+  ten domain packs in the wheel) and it passed unchanged. No code change.
+
 ## [0.3.4] — 2026-09-03
 
 ### Changed
