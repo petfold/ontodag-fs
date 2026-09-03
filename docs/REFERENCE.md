@@ -9,7 +9,7 @@ and [swarmfs](https://github.com/petfold/swarmfs/blob/main/docs/REFERENCE.md).
 Tables here are pinned against the code by `tests/test_reference.py` — if a
 name or parameter in this file and the code disagree, the suite fails.
 
-Package version this file describes: `0.3.3`.
+Package version this file describes: `0.3.4`.
 
 ## 1. Vocabulary
 
