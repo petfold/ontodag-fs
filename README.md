@@ -132,7 +132,7 @@ DuckDB, …) for free.
 ```console
 $ git clone https://github.com/petfold/ontodag-fs && cd ontodag-fs
 $ python3 -m venv .venv && .venv/bin/pip install -e ".[test]"
-$ .venv/bin/pytest
+$ .venv/bin/pytest                 # 288 tests
 ```
 
 The test suite runs entirely offline — no Bee node, no FUSE — and every
