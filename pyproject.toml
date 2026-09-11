@@ -54,7 +54,11 @@ dependencies = [
     # `ontodag.browse`, the packaged web app, `dispatch`'s out=/err= streams —
     # so the floor stays where a *use* put it.
     "ontodag>=0.16.0,<0.24.0",
-    "swarmfs>=0.8.0",  # read_reference/reference_size, the public raw-ref reads
+    # 0.8.0: read_reference/reference_size, the public raw-ref reads.
+    # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —
+    # `odag-fs mount` goes through it (read-only policy, errno mapping,
+    # honest attributes) instead of fsspec's raw wrapper.
+    "swarmfs>=0.10.1",
 ]
 
 [project.optional-dependencies]

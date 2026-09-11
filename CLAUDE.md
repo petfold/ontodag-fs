@@ -105,9 +105,17 @@ yourself adding a database, cache file, or persisted mapping to this repo, stop
 § Caching).
 
 **This repo does NOT contain FUSE code.** It is a pure `AbstractFileSystem`
-implementation. Mounting is done with fsspec's generic FUSE wrapper. A dedicated
-fusepy layer is a possible *future* addition (see ROADMAP), only if fsspec's
-wrapper proves inadequate in practice.
+implementation. Mounting goes through `swarmfs.fuse.mount(fs=...)` — fsspec's
+generic wrapper with swarmfs's policy on top (read-only enforced by the kernel
+`ro` flag and EROFS on every write, `0444`/`0555` modes, stable timestamps,
+errors mapped to errno). fsspec's *raw* wrapper did prove inadequate, measured
+2026-09-11 over the zoo view: `0777` on everything, a timestamp that changed
+between two `stat`s, and "Invalid argument" plus a traceback for every refused
+write — this repo's reasoned `NotImplementedError` messages never reached the
+shell. The fix lives in swarmfs (the dependency that owns mounting), not here;
+when the mount becomes writable for filing, that too is swarmfs's `--rw`
+follow-up. `tests/test_fuse.py` (`pytest -m fuse`) mounts the zoo through the
+kernel.
 
 **This repo does NOT edit the DAG's structure.** v0/v1 are read-write for
 *object filing* but read-only for the *lattice*. No `mkdir`-as-concept-creation

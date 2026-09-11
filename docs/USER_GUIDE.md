@@ -256,10 +256,17 @@ intent: ['italian', 'main', 'recipe', 'vegetarian']
 ### Step 4 — mount it
 
 ```console
-$ pip install fusepy
+$ pip install "swarmfs[fuse]"        # plus the system library: apt install libfuse2
+                                     # (libfuse2t64 on Ubuntu 24.04+; macFUSE on macOS)
 $ mkdir -p ~/recipes
 $ odag-fs mount ~/recipes
 ```
+
+The mount is read-only: browsing, `cat`, `grep`, `rsync` out — anything that
+reads. Filing (`cp` into a concept directory) is v0.1 and today is done
+with the Python helper shown below; through the mount a write fails with
+"Read-only file system" rather than pretending. Files show as `r--r--r--`,
+directories as `r-xr-xr-x`, sizes are real.
 
 In another terminal it's now just a filesystem — use anything:
 

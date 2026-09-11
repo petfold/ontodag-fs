@@ -13,10 +13,9 @@ updated (mark items DONE with a date).
       `import`, `mount` and `/.unfiled/` management.
 - [x] **Upstream dimension lattices** — implemented here 2026-07-31.
 - [x] **Residency** — evaluated 2026-08-03 (verdict below).
-- [ ] **Step 0** — the standalone `swarmfs mount` entry point, which is *not*
-      built: swarmfs declares no console scripts and does not use
-      `fsspec.fuse`. ontodag-fs mounts through its own CLI instead, so this
-      never blocked anything here.
+- [x] **Step 0** — shipped in swarmfs 0.10.0/0.10.1 (2026-09-11); adopted
+      here the same day: `odag-fs mount` now goes through
+      `swarmfs.fuse.mount(fs=...)` instead of fsspec's raw wrapper.
 - [ ] **Storage tiers and overlay** — dependency-repo work, sequenced by need.
 - [ ] **Later, only if earned by usage.**
 
@@ -26,21 +25,34 @@ projection *feels* right.
 ## Step 0 — swarmfs FUSE mount (lives in the swarmfs repo, NOT here)
 
 The "simple Swarm FUSE interface" is not new code: it is fsspec's generic FUSE
-wrapper over the existing swarmfs backend. Deliverables **in swarmfs**:
+wrapper over the existing swarmfs backend. Deliverables **in swarmfs**, all
+shipped 2026-09-11 (swarmfs 0.10.0; see its ROADMAP for the findings):
 
-- [ ] Verify `fsspec.fuse.run(SwarmFileSystem(...), "bzz-root-or-ref/", mountpoint)`
-  works read-only against (a) the Memory/mock backend, (b) a Bee gateway.
-  Fix any AbstractFileSystem conformance gaps it exposes (fsspec's FUSE wrapper
-  is a good conformance test: it exercises ls/info/cat/open strictly).
-- [ ] Add a `swarmfs mount <ref-or-bzz-url> <mountpoint>` console entry point
-  (thin wrapper around fsspec.fuse.run) + README section "Mounting Swarm as a
-  filesystem", with the fusepy/libfuse install caveat and a note that this is
-  read-only for immutable references.
-- [ ] Optional extra: `pytest -m fuse` integration test, skipped when libfuse is
-  absent.
+- [x] Verified read-only against the fake node, a local Bee 2.8.2 and the
+  public gateway. Conformance gaps found: the gateway's `/health` is plain
+  text, and fsspec's raw `FUSEr` lets every exception but `FileNotFoundError`
+  escape (EINVAL), reports `time.time()` per `getattr`, mode `0777`, and has
+  a write path that `seek()`s a write-mode buffered file — so swarmfs
+  subclassed it (`SwarmFUSEr`: guarded ops, constant timestamps, `0444`/
+  `0555`, EROFS on every write over the kernel `ro` flag).
+- [x] `swarmfs mount <url> <mountpoint>` console script + README/User Guide
+  sections with the fusepy/libfuse-2 caveat and the read-only note.
+- [x] `pytest -m fuse` kernel-mount tests, skipping with the missing piece
+  named.
 
-This both delivers the standalone Swarm-FUSE feature and de-risks the exact
-mounting path ontodag-fs will reuse.
+**Why this never blocked ontodag-fs, and what it gave it.** `odag-fs mount`
+mounts the *lattice view*, a different filesystem from a `bzz://` reference,
+so `swarmfs mount` could never replace it — the earlier note "ontodag-fs mounts
+through its own CLI" was an observation, not a design choice. What the step
+promised was to de-risk the mounting *path* ontodag-fs reuses, and it did:
+mounting the zoo view through fsspec's raw wrapper showed `0777` everywhere, a
+timestamp changing between two `stat`s, and "Invalid argument" plus a
+traceback for each refused write. swarmfs 0.10.1 made its mounter accept any
+fsspec filesystem (`mount(fs=...)`), and `cmd_mount` now uses it: read-only
+told truthfully (EROFS), honest attributes, errno mapping — with no FUSE code
+in this repo, per CLAUDE.md. `tests/test_fuse.py` mounts the zoo through the
+kernel (`pytest -m fuse`). When filing lands, the writable mount is swarmfs's
+`--rw` follow-up and arrives here without code.
 
 ## v0 — read-only ontology view (ontodag-fs, days not weeks)
 

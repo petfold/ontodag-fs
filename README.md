@@ -71,7 +71,7 @@ $ odag-fs tree /
 $ odag-fs cat /pet/dog/rex.txt
 $ odag-fs                              # interactive: cd/ls/cat with a > prompt
 $ odag-fs --as-of 8e637ecc6ad6 tree /  # the store as it was (odag history lists roots)
-$ pip install fusepy && odag-fs mount ~/mnt
+$ pip install "swarmfs[fuse]" && odag-fs mount ~/mnt   # + libfuse2; read-only
 ```
 
 New here? Read the **[User Guide](docs/USER_GUIDE.md)** — a tutorial that

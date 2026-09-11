@@ -12,6 +12,23 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [Unreleased]
+
+### Changed
+
+- **`odag-fs mount` goes through `swarmfs.fuse.mount(fs=...)`** (swarmfs ≥
+  0.10.1) instead of fsspec's raw FUSE wrapper: the mount is now honestly
+  read-only (kernel `ro` flag; writes fail with EROFS rather than "Invalid
+  argument" plus a traceback), files are `0444`, directories `0555`,
+  timestamps stable, unknown paths ENOENT. Install with
+  `pip install "swarmfs[fuse]"` and a system libfuse 2 (`fusepy` alone is no
+  longer the documented route). Roadmap Step 0 closed.
+
+### Added
+
+- `tests/test_fuse.py` — mounts the zoo view through the kernel
+  (`pytest -m fuse`; skips without libfuse).
+
 ## [0.3.7] — 2026-09-04
 
 ### Changed
