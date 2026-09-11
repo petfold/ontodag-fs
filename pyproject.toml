@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontodag-fs"
-version = "0.5.0"
+version = "0.6.0"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
@@ -58,7 +58,10 @@ dependencies = [
     # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —
     # `odag-fs mount` goes through it (read-only policy, errno mapping,
     # honest attributes) instead of fsspec's raw wrapper.
-    "swarmfs>=0.10.1",
+    # 0.11.1: mount(rw=True) — `odag-fs mount --rw` files what you save
+    # (0.11.1 fixes the shell's `> file` committing an empty object first,
+    # found by exactly this consumer).
+    "swarmfs>=0.11.1",
 ]
 
 [project.optional-dependencies]

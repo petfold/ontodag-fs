@@ -47,6 +47,14 @@ ceiling is **<0.18.0** since 2026-08-09.
 
 ## Release state
 
+**Published 0.6.0 (2026-09-11)** — `odag-fs mount --rw` (swarmfs ≥ 0.11.1):
+filing through the kernel — `cp` into a concept directory files, `rm`
+retracts, `mv` reclassifies/relabels, `mkdir` EOPNOTSUPP; stamp checked
+before mounting. Wiring it found swarmfs's shell-redirect double commit
+(fixed in swarmfs 0.11.1 the same hour). Live over a Swarm-backed
+EagerOntoDAG on Bee 2.8.2 from the shell; kernel-mount tests on both
+backends. Suite 315 with the CI guard.
+
 **Published 0.5.0 (2026-09-11)** — v0.1 filing on the fsspec surface
 (`pipe_file`/`put_file`/`open("wb")`, `rm`, `mv`, `cp_file`, `classify`;
 `ConceptIndex` grew `asserted`/`retract`/`relabel`/`remove_object`/`persist`).
@@ -109,8 +117,10 @@ nothing at the earlier root). `CHANGELOG.md` — new in this release, back-fille
   `pipe_file`/`open("wb")` store + classify, `rm` retracts (DESIGN_DECISIONS
   #23: only what the path asserts — never by implication), `mv` reclassifies/
   relabels, `cp_file` unions, `classify(ref, path)` files existing content.
-  The FUSE mount stays read-only until swarmfs's writable mounter; the
-  lattice itself is edited through ontodag, never through the view.
+  `odag-fs mount --rw` (swarmfs ≥ 0.11.1) files what you save through the
+  kernel — same verbs, one store version per file, refused writes are the
+  shell's error. The lattice itself is edited through ontodag, never
+  through the view (`mkdir` → EOPNOTSUPP).
 
 ## Architecture and division of labor
 
@@ -140,10 +150,10 @@ errors mapped to errno). fsspec's *raw* wrapper did prove inadequate, measured
 2026-09-11 over the zoo view: `0777` on everything, a timestamp that changed
 between two `stat`s, and "Invalid argument" plus a traceback for every refused
 write — this repo's reasoned `NotImplementedError` messages never reached the
-shell. The fix lives in swarmfs (the dependency that owns mounting), not here;
-when the mount becomes writable for filing, that too is swarmfs's `--rw`
-follow-up. `tests/test_fuse.py` (`pytest -m fuse`) mounts the zoo through the
-kernel.
+shell. The fix lives in swarmfs (the dependency that owns mounting), not here; the
+writable mount (`--rw`, swarmfs 0.11.1) likewise — `cmd_mount` only passes
+`rw=` and checks the stamp first. `tests/test_fuse.py` (`pytest -m fuse`)
+mounts the zoo through the kernel, read-only and writable.
 
 **This repo does NOT edit the DAG's structure.** v0/v1 are read-write for
 *object filing* but read-only for the *lattice*. No `mkdir`-as-concept-creation

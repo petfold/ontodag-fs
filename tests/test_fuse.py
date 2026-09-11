@@ -100,3 +100,72 @@ def test_mounted_view_through_the_kernel(backend, tmp_path):
         _unmount(str(mp))
         th.join(timeout=10)
     assert not th.is_alive()
+
+
+@pytest.mark.fuse
+@pytest.mark.parametrize("backend", ["memory", "ontodag"])
+def test_writable_mount_files_what_you_save(backend, tmp_path):
+    """`odag-fs mount --rw`: a file saved into a concept directory is stored
+    and classified when closed; rm retracts; mv reclassifies; mkdir is
+    refused (the lattice is not edited through the mount)."""
+    reason = _fuse_unavailable()
+    if reason:
+        pytest.skip(reason)
+    from swarmfs.fuse import mount
+
+    zoo = build_zoo(backend)
+    mp = tmp_path / "mnt"
+    mp.mkdir()
+    th = mount("/", str(mp), fs=zoo.fs, fsname="odag-fs", foreground=False,
+               ready_file=True, rw=True)
+    try:
+        deadline = time.monotonic() + 15
+        while not os.path.exists(mp / ".fuse_ready"):
+            assert th.is_alive() and time.monotonic() < deadline
+            time.sleep(0.05)
+
+        # cp into a concept directory: stored on Swarm, classified, one upload
+        n = len(zoo.client.uploads)
+        (mp / "pet" / "dog" / "bones.txt").write_bytes(b"a bone")
+        assert len(zoo.client.uploads) == n + 1
+        assert zoo.fs.cat_file("/dog/bones.txt") == b"a bone"
+        assert (mp / "dog" / "bones.txt").read_bytes() == b"a bone"    # any true name
+        assert "bones.txt" in os.listdir(mp / "pet" / ".all")
+
+        # rm retracts: the object waits in /.unfiled/, bytes untouched
+        os.unlink(mp / "dog" / "rex.jpg")
+        assert "rex.jpg" in os.listdir(mp / ".unfiled")
+        assert (mp / ".unfiled" / "rex.jpg").read_bytes() == b"rex the dog"
+        # ...and rm by implication is refused, as EACCES, not silently
+        with pytest.raises(PermissionError):
+            os.unlink(mp / "pet" / "whiskers.jpg")
+
+        # mv reclassifies; a rename in place relabels
+        os.rename(mp / "cat" / "whiskers.jpg", mp / "wolf" / "whiskers.jpg")
+        assert zoo.index.asserted(zoo.refs["whiskers"]) == frozenset({"wolf"})
+        os.rename(mp / "wolf" / "whiskers.jpg", mp / "wolf" / "grey.jpg")
+        assert zoo.index.get_object(zoo.refs["whiskers"]).label == "grey.jpg"
+
+        # an unknown concept: the save is refused at close, nothing uploaded
+        n = len(zoo.client.uploads)
+        with pytest.raises(OSError):
+            (mp / "unicorn" / "horn.txt").write_bytes(b"x")
+        assert len(zoo.client.uploads) == n
+
+        # the lattice is not edited here
+        with pytest.raises(OSError) as e:
+            os.mkdir(mp / "pet" / "hamster")
+        assert e.value.errno in (errno.EOPNOTSUPP, errno.EPERM, errno.EROFS)
+
+        # invariant 7 over the mount: rm/mv moved no bytes
+        assert zoo.client.uploads[n:] == []
+
+        # the shell's `> file` (open, dup2, close, write, close): ONE object,
+        # with the content — swarmfs < 0.11.1 filed an empty one first
+        subprocess.run(f"echo '# tiramisu' > '{mp / 'wolf' / 'howl.md'}'", shell=True, check=True)
+        assert os.listdir(mp / "wolf") .count("howl.md") == 1
+        assert sum(1 for o in zoo.index.extent(frozenset({"wolf"})) if o.label == "howl.md") == 1
+        assert (mp / "wolf" / "howl.md").read_bytes() == b"# tiramisu\n"
+    finally:
+        _unmount(str(mp))
+        th.join(timeout=10)

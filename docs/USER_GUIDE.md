@@ -259,14 +259,31 @@ intent: ['italian', 'main', 'recipe', 'vegetarian']
 $ pip install "swarmfs[fuse]"        # plus the system library: apt install libfuse2
                                      # (libfuse2t64 on Ubuntu 24.04+; macFUSE on macOS)
 $ mkdir -p ~/recipes
-$ odag-fs mount ~/recipes
+$ odag-fs mount ~/recipes            # read-only; add --rw to file by saving
 ```
 
-The mount is read-only: browsing, `cat`, `grep`, `rsync` out — anything that
-reads. Filing works through the Python/fsspec surface (Step 2 and § 4
-"Filing"); through the mount a write fails with "Read-only file system"
-rather than pretending, until swarmfs's writable mounter lands. Files show
-as `r--r--r--`, directories as `r-xr-xr-x`, sizes are real.
+Read-only by default: browsing, `cat`, `grep`, `rsync` out — anything that
+reads; a write fails with "Read-only file system" rather than pretending.
+Files show as `r--r--r--`, directories as `r-xr-xr-x`, sizes are real.
+
+With `--rw`, saving a file *into a concept directory files it*:
+
+```console
+$ odag-fs mount --rw ~/recipes
+$ cp ~/Downloads/panna-cotta.md ~/recipes/dessert/italian/   # stored + classified
+$ mv ~/recipes/dessert/italian/panna-cotta.md ~/recipes/dessert/french/
+$ rm ~/recipes/vegetarian/caprese.md                          # retracts `vegetarian`
+$ mkdir ~/recipes/dessert/peruvian
+mkdir: cannot create directory: Operation not supported     # categories: `odag put`
+```
+
+Each saved file is one store version, committed when the file is closed,
+so a refused write — no usable stamp (checked once before mounting), a
+directory that names no concept — comes back as an error from `cp`, not
+silently later. `rm` follows the retraction rule from § 4 "Filing" (refused
+with "Permission denied" where the file is only present by implication).
+Editors, `rsync`, file managers all work; `chmod`/`touch` are accepted and
+ignored — a content address has no mode or mtime.
 
 In another terminal it's now just a filesystem — use anything:
 
@@ -590,11 +607,11 @@ different one. Your store stays where it is (`odag undo` is what moves it).
   legitimately appears under many paths. This is a semantic view, not a
   backup target — for backups, use `.all/` at the root, which lists each
   object exactly once.
-- **The mount is read-only; the Python surface writes.** Through FUSE,
-  `cp`/`rm`/`mv` fail with "Read-only file system" until swarmfs's writable
-  mounter lands; `fs.put_file`/`rm`/`mv`/`cp_file` do the same jobs today.
-  `mkdir` is refused everywhere: creating categories always goes through
-  `odag`.
+- **The mount is read-only unless you ask (`--rw`).** Read-only, `cp`/
+  `rm`/`mv` fail with "Read-only file system"; with `--rw` they file,
+  retract and reclassify — the same verbs as `fs.put_file`/`rm`/`mv` in
+  Python, one store version each. `mkdir` is refused either way: creating
+  categories always goes through `odag`.
 
 ---
 
@@ -633,8 +650,8 @@ DESIGN_DECISIONS #19 for exactly how and why they differ.)*
 
 ## 8. What's coming
 
-- **Filing through the mount**: `cp file ~/mnt/dessert/` doing what
-  `fs.put_file` does today — waits on swarmfs's writable FUSE mounter.
+- **xattr exposure of intents** (`getfattr -d` → the full classification)
+  — needs the mounter (swarmfs) to grow an xattr path.
 - **v1 — workflow tools**: `odag-fs import <folder>` (turn a directory
   tree into classifications, with provenance tags for later cleanup), label
   renaming, `/.unfiled/` management, and classification visible as extended

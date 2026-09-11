@@ -71,7 +71,7 @@ $ odag-fs tree /
 $ odag-fs cat /pet/dog/rex.txt
 $ odag-fs                              # interactive: cd/ls/cat with a > prompt
 $ odag-fs --as-of 8e637ecc6ad6 tree /  # the store as it was (odag history lists roots)
-$ pip install "swarmfs[fuse]" && odag-fs mount ~/mnt   # + libfuse2; read-only
+$ pip install "swarmfs[fuse]" && odag-fs mount ~/mnt   # + libfuse2; add --rw to file by cp
 ```
 
 New here? Read the **[User Guide](docs/USER_GUIDE.md)** — a tutorial that
@@ -89,10 +89,11 @@ and classifies them in one step, `rm` retracts a classification (an object left
 with none waits in `/.unfiled/`), `mv` reclassifies or relabels, `cp` within
 the view is an intent union, and `cp /.swarm/<ref> /<concept>/<name>` classifies
 existing Swarm content without re-uploading. Bytes never move; identical
-content filed twice is one object. The FUSE mount is still read-only (writing
-through it needs swarmfs's writable mounter, its follow-up), and the lattice
-itself (creating categories) is edited through OntoDAG's own API, never through
-the view. See [ROADMAP.md](ROADMAP.md).
+content filed twice is one object. **`odag-fs mount --rw`** does the same
+from any shell or tool: `cp report.pdf ~/mnt/finance/2026/` files it, `rm`
+retracts, `mv` reclassifies. The lattice itself (creating categories) is
+edited through OntoDAG's own API, never through the view — `mkdir` is
+refused. See [ROADMAP.md](ROADMAP.md).
 
 ## Architecture
 

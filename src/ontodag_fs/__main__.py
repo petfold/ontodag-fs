@@ -17,8 +17,9 @@ store, bee_api, bee_batch), so ``odag set store swarm:NAME`` and
 ``odag-fs set store swarm:NAME`` are interchangeable and no ``-s`` is
 needed once a default store is set. With nothing configured the default
 is the local ``~/.ontodag`` store. ``mount`` goes through swarmfs's FUSE
-mounter — fsspec's generic wrapper with a read-only policy on top (needs
-``swarmfs[fuse]`` and libfuse 2; deployment mode, not architecture).
+mounter — fsspec's generic wrapper with its policy on top, read-only by
+default, ``--rw`` filing what you save (needs ``swarmfs[fuse]`` and
+libfuse 2; deployment mode, not architecture).
 """
 
 from __future__ import annotations
@@ -50,7 +51,7 @@ Commands:
   info PATH                show details for a path
   cd [PATH]                change the current directory (interactive mode)
   pwd                      print the current directory
-  mount MOUNTPOINT         FUSE-mount the view, read-only (swarmfs[fuse])
+  mount [--rw] MOUNTPOINT  FUSE-mount the view (swarmfs[fuse]); --rw files what you save
   set [KEY [VALUE]]        show settings, or set one (store, bee_api, bee_batch)
   help                     show this help
 
@@ -202,18 +203,37 @@ def cmd_pwd(session: Session, args) -> None:
 
 def cmd_mount(session: Session, args) -> None:
     """FUSE-mount the view through swarmfs's mounter (its policy over
-    fsspec's generic wrapper: read-only enforced by the kernel and by
-    EROFS on every write, 0444/0555 modes, stable timestamps, errors
-    mapped to errno instead of fsspec's bare EINVAL-with-traceback). The
-    view is read-only through the mount today — filing is v0.1 — so this
-    tells the truth; a writable mounter is swarmfs's follow-up and lands
-    here for free. Needs `pip install "swarmfs[fuse]"` + libfuse 2."""
+    fsspec's generic wrapper: 0444/0555 modes, stable timestamps, errors
+    mapped to errno instead of fsspec's bare EINVAL-with-traceback).
+    Read-only by default (kernel `ro` + EROFS). With ``--rw`` (swarmfs ≥
+    0.11.1) every file saved into a concept directory is filed — stored on
+    Swarm and classified, one store version per file, committed when the
+    file is closed so a refused write (no stamp, an unknown concept) is the
+    shell's error — `rm` retracts, `mv` reclassifies or relabels, and
+    `mkdir` is still refused: the lattice is edited with `odag`, never
+    through the mount. Needs `pip install "swarmfs[fuse]"` + libfuse 2."""
     from swarmfs.fuse import mount  # imports without fusepy; mount() explains
 
-    print(f"mounting ontodag view at {args.mountpoint} — Ctrl-C or "
-          f"`fusermount -u {args.mountpoint}` to unmount")
+    fs = session.fs
+    if args.rw:
+        # swarmfs checks the stamp before mounting a *Swarm* filesystem; ours
+        # hides swarmfs behind `.swarm`, so fail early here the same way
+        # instead of refusing every save with EACCES after mounting.
+        from fsspec.asyn import sync
+        from swarmfs.exceptions import StampError
+        from swarmfs.stamps import StampManager
+
+        swarm = fs.swarm
+        try:
+            sync(swarm.loop, StampManager(swarm.client).resolve,
+                 getattr(swarm, "stamp", None))
+        except StampError as e:
+            raise ValueError(f"--rw needs a usable postage stamp: {e}") from None
+    print(f"mounting ontodag view at {args.mountpoint}"
+          f"{' (writable: saving files files them)' if args.rw else ' (read-only)'}"
+          f" — Ctrl-C or `fusermount -u {args.mountpoint}` to unmount")
     try:
-        mount("/", args.mountpoint, fs=session.fs, fsname="odag-fs")
+        mount("/", args.mountpoint, fs=fs, fsname="odag-fs", rw=args.rw)
     except (ImportError, OSError) as e:  # fusepy/libfuse missing, bad mountpoint
         raise ValueError(str(e)) from None
 
@@ -309,9 +329,12 @@ def _build_command_parser(with_globals: bool) -> argparse.ArgumentParser:
     p = sub.add_parser("pwd", help="print the current directory")
     p.set_defaults(func=cmd_pwd)
 
-    p = sub.add_parser("mount", help="FUSE-mount the view, read-only "
-                                     "(needs swarmfs[fuse] + libfuse 2)")
+    p = sub.add_parser("mount", help="FUSE-mount the view (needs swarmfs[fuse] + "
+                                     "libfuse 2); --rw files what you save")
     p.add_argument("mountpoint")
+    p.add_argument("--rw", action="store_true",
+                   help="writable: cp/rm/mv in the mount file, retract and "
+                        "reclassify (one store version per file; needs a stamp)")
     p.set_defaults(func=cmd_mount)
 
     p = sub.add_parser("set", help="show or change settings (shared with odag)")

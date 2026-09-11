@@ -12,6 +12,16 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.6.0] — 2026-09-11
+
+### Added
+
+- **`odag-fs mount --rw`** (swarmfs ≥ 0.11.1): saving a file into a concept
+  directory files it (stored on Swarm, classified, one store version),
+  `rm` retracts, `mv` reclassifies or relabels — all through the kernel;
+  `mkdir` stays refused. A refused write is the shell's error at close; the
+  stamp is checked before mounting. Kernel-mount test on both backends.
+
 ## [0.5.0] — 2026-09-11
 
 ### Added

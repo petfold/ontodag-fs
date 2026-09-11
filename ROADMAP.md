@@ -9,8 +9,9 @@ updated (mark items DONE with a date).
       executed 2026-07-22 against a real Bee node.
 - [x] **v0.1** filing — shipped 2026-09-11 (built the same day the wrong
       tick was corrected): `pipe_file`/`put_file`/`open("wb")`, `rm`, `mv`,
-      `cp_file`, `classify` on the fsspec surface; through the FUSE mount
-      writes still wait on swarmfs's writable mounter.
+      `cp_file`, `classify` on the fsspec surface, and through the FUSE
+      mount with `odag-fs mount --rw` (swarmfs 0.11.1's writable mounter,
+      same day).
 - [ ] **v1** workflow layer — **not shipped** (same correction). The
       `odag-fs` CLI carries `ls`, `tree`, `cat`, `info`, `cd`, `pwd`,
       `mount`, `set`, `help` — no `file`, no `import`; `/.unfiled/` is
@@ -102,10 +103,14 @@ retract by implication.*
 - [x] Invariant tests (`tests/test_filing.py`, both backends): 3 file-then-find,
   4 rm locality, 5 content dedup, 7 no-byte-motion, plus the read-side ones
   in `tests/test_invariants.py`.
-- Writing through the *mount* additionally needs swarmfs's writable mounter
-  (its `--rw` follow-up): fsspec's raw wrapper's write path seeks a
-  write-mode buffered file and fails, so it never worked for any fsspec
-  backend — see § Step 0.
+- [x] Writing through the *mount*: `odag-fs mount --rw` (swarmfs 0.11.1,
+  2026-09-11). swarmfs replaced fsspec's write path (which never worked for
+  any fsspec backend) with commit-on-close buffering; here that means `cp`
+  into a concept directory files, `rm` retracts, `mv` reclassifies, one
+  store version per file, and a refused write is the shell's error. `mkdir`
+  stays refused (EOPNOTSUPP). `tests/test_fuse.py` drives it through the
+  kernel on both backends. `cmd_mount --rw` checks the stamp before
+  mounting, as swarmfs does for its own filesystems.
 - **Concurrency design (decided 2026-08-04, with ontodag): CRDT merge
   coordinates writers; locks never do.** Two layers, kept distinct:
   (1) *Multi-writer convergence* is ontodag's commutative, idempotent
