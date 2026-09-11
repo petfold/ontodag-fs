@@ -12,7 +12,7 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
-## [Unreleased]
+## [0.4.0] — 2026-09-11
 
 ### Changed
 
@@ -28,6 +28,14 @@ changed, when" index.
 
 - `tests/test_fuse.py` — mounts the zoo view through the kernel
   (`pytest -m fuse`; skips without libfuse).
+
+### Documentation
+
+- **Roadmap corrected:** the v0.1 (filing) and v1 (workflow CLI) items had
+  been ticked as shipped although every write method in `fs.py` is a
+  `NotImplementedError` refusal and the CLI has no `file`/`import` commands.
+  They are open again, with the code state spelled out; only `mount` of the
+  v1 list is real. Step 0 (the swarmfs FUSE mount) is closed.
 
 ## [0.3.7] — 2026-09-04
 

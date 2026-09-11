@@ -7,10 +7,17 @@ updated (mark items DONE with a date).
 
 - [x] **v0** read-only ontology view — shipped; the manual mount milestone was
       executed 2026-07-22 against a real Bee node.
-- [x] **v0.1** filing — shipped: `pipe_file`, `put_file`, `rm`, `mv`,
-      classify-by-reference all present in `fs.py`.
-- [x] **v1** workflow layer — shipped: the `odag-fs` CLI carries `file`,
-      `import`, `mount` and `/.unfiled/` management.
+- [ ] **v0.1** filing — **not shipped** (corrected 2026-09-11: the tick
+      from commit 112be9c was wrong). `pipe_file`, `put_file`, `rm`, `mv`,
+      `cp_file` and `touch` exist in `fs.py` only as refusals
+      (`NotImplementedError`, "v0 is read-only; filing lands in v0.1"), and
+      `tests/test_readonly.py` asserts exactly that. Filing today is the
+      Python helper in the User Guide.
+- [ ] **v1** workflow layer — **not shipped** (same correction). The
+      `odag-fs` CLI carries `ls`, `tree`, `cat`, `info`, `cd`, `pwd`,
+      `mount`, `set`, `help` — no `file`, no `import`; `/.unfiled/` is
+      *browsable* (read side), not managed. Only `mount` of the v1 list is
+      real.
 - [x] **Upstream dimension lattices** — implemented here 2026-07-31.
 - [x] **Residency** — evaluated 2026-08-03 (verdict below).
 - [x] **Step 0** — shipped in swarmfs 0.10.0/0.10.1 (2026-09-11); adopted
@@ -76,11 +83,21 @@ kernel (`pytest -m fuse`). When filing lands, the writable mount is swarmfs's
 
 ## v0.1 — filing
 
-- [x] `pipe_file` / `put_file` (store + assert, dedup-by-content), `rm`
+*Status corrected 2026-09-11: none of the write side is implemented; every
+method below is a `NotImplementedError` refusal in `fs.py`, and the mount
+(now honestly read-only, EROFS) says so to the shell.*
+
+- [ ] `pipe_file` / `put_file` (store + assert, dedup-by-content), `rm`
   (retraction, `/.unfiled/`), `mv`, in-mount `cp` per SPEC §3.
-- [x] Classify-by-reference primitive (from `/.swarm/<ref>`).
-- [x] Postage-stamp error surfacing (PermissionError with actionable message).
-- [x] Invariant tests 3, 4, 5, 7.
+- [ ] Classify-by-reference primitive (from `/.swarm/<ref>`).
+- [ ] Postage-stamp error surfacing (PermissionError with actionable message).
+- [x] Invariant tests that hold already on the read side (`tests/test_invariants.py`:
+  order-insensitivity, redundancy, name↔bytes, extent coverage, dot-attribute
+  rejection on write). The write-path invariants come with the write path.
+- Writing through the *mount* additionally needs swarmfs's writable mounter
+  (its `--rw` follow-up): fsspec's raw wrapper's write path seeks a
+  write-mode buffered file and fails, so it never worked for any fsspec
+  backend — see § Step 0.
 - **Concurrency design (decided 2026-08-04, with ontodag): CRDT merge
   coordinates writers; locks never do.** Two layers, kept distinct:
   (1) *Multi-writer convergence* is ontodag's commutative, idempotent
@@ -103,11 +120,15 @@ kernel (`pytest -m fuse`). When filing lands, the writable mount is swarmfs's
 
 ## v1 — workflow layer
 
-- [x] CLI: `odag-fs file <ref|path> <concept-path>`, `odag-fs import
-  <tree> --provenance TAG` (SPEC §5), `odag-fs mount`.
-- [x] `/.unfiled/` management; label rename.
-- [x] xattr exposure of intents (if fsspec's FUSE path allows; else document as
-  needing the dedicated FUSE layer).
+*Status corrected 2026-09-11: of this list only `mount` exists.*
+
+- [ ] CLI: `odag-fs file <ref|path> <concept-path>`, `odag-fs import
+  <tree> --provenance TAG` (SPEC §5).
+- [x] `odag-fs mount` — through `swarmfs.fuse.mount` since 0.4.0 (§ Step 0).
+- [ ] `/.unfiled/` management; label rename.
+- [ ] xattr exposure of intents — fsspec's FUSE wrapper has no xattr path
+  (fusepy's default `getxattr` is ENOTSUP), so this needs swarmfs's mounter
+  to grow one; document there when it does.
 
 ## Storage tiers and overlay (work in dependency repos; see DESIGN_DECISIONS #14–16)
 
