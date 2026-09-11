@@ -123,8 +123,10 @@ $ odag show
 
 ### Step 2 — file some recipes
 
-Filing through the filesystem itself (`cp` into a directory) arrives in
-v0.1. Today, filing is a short Python helper — save this as `file_it.py`:
+Filing is a filesystem write: `put_file` stores the bytes on Swarm and
+classifies them in one step (`cp` *through the FUSE mount* is still to come —
+the mount is read-only until swarmfs's writable mounter lands). A short
+helper wraps it — save this as `file_it.py`:
 
 ```python
 #!/usr/bin/env python3
@@ -135,11 +137,10 @@ usage: python3 file_it.py STORE_NAME FILE CATEGORY [CATEGORY...]
 import os
 import sys
 
-from fsspec.asyn import sync
 from ontodag.eager import EagerOntoDAG
 from recordstore import BeeBytesStore, FilePointer, RecordStore
 from swarmfs import SwarmFileSystem
-from ontodag_fs import OntoDAGIndex
+from ontodag_fs import OntoDAGFileSystem, OntoDAGIndex
 
 API = os.environ.get("BEE_API", "http://localhost:1633")
 BATCH = os.environ["BEE_BATCH"]  # a usable postage stamp
@@ -147,16 +148,15 @@ BATCH = os.environ["BEE_BATCH"]  # a usable postage stamp
 store_name, path, *categories = sys.argv[1:]
 pointer = FilePointer(os.path.expanduser(f"~/.ontodag/{store_name}.root"))
 dag = EagerOntoDAG(RecordStore(BeeBytesStore(API, BATCH), pointer=pointer))
-index = OntoDAGIndex(dag)
-swarm = SwarmFileSystem(api_url=API)
+fs = OntoDAGFileSystem(index=OntoDAGIndex(dag), swarm=SwarmFileSystem(api_url=API, stamp=BATCH))
 
-with open(path, "rb") as fh:
-    data = fh.read()
-ref = sync(swarm.loop, swarm.client.bytes_post, data, BATCH)  # bytes -> Swarm
-index.add_object(ref, os.path.basename(path), set(categories))  # classify
-dag.commit()  # persist the DAG itself to Swarm
+# store + classify + persist the DAG, in one write
+ref = fs.put_file(path, "/" + "/".join(categories) + "/" + os.path.basename(path))
 print(f"filed {path} as {sorted(categories)} -> {ref}")
 ```
+
+(Every write persists the DAG once — `put_file`, `rm`, `mv`, `cp` are each
+one version of the store.)
 
 File four recipes:
 
@@ -263,10 +263,10 @@ $ odag-fs mount ~/recipes
 ```
 
 The mount is read-only: browsing, `cat`, `grep`, `rsync` out — anything that
-reads. Filing (`cp` into a concept directory) is v0.1 and today is done
-with the Python helper shown below; through the mount a write fails with
-"Read-only file system" rather than pretending. Files show as `r--r--r--`,
-directories as `r-xr-xr-x`, sizes are real.
+reads. Filing works through the Python/fsspec surface (Step 2 and § 4
+"Filing"); through the mount a write fails with "Read-only file system"
+rather than pretending, until swarmfs's writable mounter lands. Files show
+as `r--r--r--`, directories as `r-xr-xr-x`, sizes are real.
 
 In another terminal it's now just a filesystem — use anything:
 
@@ -391,11 +391,47 @@ $ odag-fs cat /.swarm/c76d86370de23d5f…<full 64 hex>
 Share the reference with anyone on Swarm and they have the file — the
 classification is yours; the content is simply *addressable*.
 
+### Filing: writes are classification
+
+Everything a write does is an edit to *what an object means*; bytes never
+move, and Swarm has no delete. With `fs` an `OntoDAGFileSystem` (Step 2):
+
+```python
+fs.put_file("tiramisu.md", "/dessert/italian/tiramisu.md")  # store + classify
+fs.pipe_file("/main/japanese/ramen.md", b"...")              # same, from bytes
+with fs.open("/dessert/brownie.md", "wb") as f:              # same, streamed
+    f.write(b"...")
+
+fs.cp_file("/dessert/italian/tiramisu.md", "/vegetarian/tiramisu.md")
+#   the object is now ALSO vegetarian (intent union; one object, one label)
+fs.mv("/dessert/italian/tiramisu.md", "/dessert/french/tiramisu.md")
+#   reclassify: italian retracted, french asserted — one store version
+fs.mv("/dessert/brownie.md", "/dessert/blondie.md")          # same dir: rename
+fs.rm("/vegetarian/tiramisu.md")                             # retract `vegetarian`
+fs.rm("/dessert/french/tiramisu.md")                         # ...and the rest → /.unfiled/
+fs.rm("/.unfiled/tiramisu.md")                               # forget it (bytes stay on Swarm)
+
+fs.cp_file(f"/.swarm/{ref}", "/dessert/found.md")            # classify existing content,
+fs.classify(ref, "/dessert/found.md")                        #   no re-upload (same thing)
+```
+
+Two rules worth knowing. **Identical bytes are one object**: filing the same
+content under two paths yields one object carrying both classifications.
+And **`rm` retracts what the path asserts**: it removes the object's
+*asserted* attributes that lie in the path. An object that only appears at
+a path by implication — `rex.jpg` filed as `dog` shows up under `/pet`
+because dogs are pets — cannot be removed *there*, since retracting `dog`
+would also take it out of `/mammal`, which the path never named; `rm`
+refuses and tells you where the object is actually filed
+(`/dog/rex.jpg`). Filing needs a usable postage stamp on the swarmfs side
+(`stamp=` or a usable batch on the node); without one the write is refused
+before any byte leaves.
+
 ### The lost-and-found: `/.unfiled/`
 
 Objects the ontology knows about but that currently have no categories
-(freshly registered, or fully retracted in v0.1) don't vanish — they wait
-in `/.unfiled/` until you classify them.
+(freshly registered, or fully retracted) don't vanish — they wait in
+`/.unfiled/` until you classify them (`mv /.unfiled/x /some/concept/x`).
 
 ### An interactive shell for the lattice
 
@@ -547,15 +583,18 @@ different one. Your store stays where it is (`odag undo` is what moves it).
   visible subdirectory. A file's display position can shift deeper as your
   collection grows; every old path keeps working.
 - **A file "moves" when its meaning does — never its bytes.** All
-  reclassification (v0.1: `cp`, `rm`, `mv` between concept dirs) edits
+  reclassification (`cp`, `rm`, `mv` between concept dirs) edits
   categories only. `rm` retracts a classification; it cannot destroy
   content (Swarm is immutable — the guide-rail is honest).
 - **`du` overcounts; naive recursive copy duplicates.** The same object
   legitimately appears under many paths. This is a semantic view, not a
   backup target — for backups, use `.all/` at the root, which lists each
   object exactly once.
-- **v0 is read-only through the mount.** `cp`/`rm`/`mv`/`mkdir` raise a
-  clear error today. Creating categories always goes through `odag`.
+- **The mount is read-only; the Python surface writes.** Through FUSE,
+  `cp`/`rm`/`mv` fail with "Read-only file system" until swarmfs's writable
+  mounter lands; `fs.put_file`/`rm`/`mv`/`cp_file` do the same jobs today.
+  `mkdir` is refused everywhere: creating categories always goes through
+  `odag`.
 
 ---
 
@@ -594,10 +633,8 @@ DESIGN_DECISIONS #19 for exactly how and why they differ.)*
 
 ## 8. What's coming
 
-- **v0.1 — filing through the filesystem**: `cp file ~/mnt/dessert/` stores
-  and classifies in one step; `rm` retracts; `mv` reclassifies; filing
-  existing Swarm content by reference (`/.swarm/<ref>` → concept dir)
-  without re-uploading.
+- **Filing through the mount**: `cp file ~/mnt/dessert/` doing what
+  `fs.put_file` does today — waits on swarmfs's writable FUSE mounter.
 - **v1 — workflow tools**: `odag-fs import <folder>` (turn a directory
   tree into classifications, with provenance tags for later cleanup), label
   renaming, `/.unfiled/` management, and classification visible as extended

@@ -305,6 +305,28 @@ authoritative for anything.
     semantics (does it recurse? do its children partition?). Left unbuilt with
     the shape named.
 
+23. **`rm` retracts what the path asserts — and refuses to retract by
+    implication** (decided 2026-09-11, when v0.1 filing was built). SPEC §3
+    said "intent minus the attributes asserted by this path that are not
+    implied by the remaining intent", which is exact for an object filed at
+    the path but silent about the common case the projection creates: an
+    object *reachable* at a path it was never filed at (`rex.jpg`, asserted
+    `dog`, is at `/pet` because `dog ⊂ pet`). Two readings were possible.
+    (a) Retract every asserted attribute that implies the path (`dog`) —
+    makes the file disappear from `/pet`, as a shell user expects, but also
+    from `/mammal` and `/dog`, which the path never named: invariant 4 (rm
+    locality) broken by design, and a claim retracted that the user did not
+    make. (b) Retract only asserted attributes that lie in the path's
+    closure; when there are none, refuse. Chosen (b): the refusal names the
+    paths where the object *is* asserted (`rm /dog/rex.jpg`), so the shell
+    user learns the true classification instead of losing three of them.
+    Consequence: `rm` is exact and local, and "the file is still there after
+    rm" can happen only with an error, never silently. `mv` inherits the rule
+    through its retract half, and asserts before it retracts (ontodag's own
+    `reclassify` ordering) so a refused move leaves the store untouched.
+    Labels: one object, one label — `cp` never relabels, `mv` relabels only
+    when the basename changes, `classify` labels only a *new* object.
+
 ## Acknowledged and deferred (named in the spec so they aren't forgotten)
 
 - **Polysemy of attribute names** (`jaguar` car vs animal). FCA context

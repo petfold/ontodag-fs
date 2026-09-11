@@ -264,3 +264,45 @@ class OntoDAGIndex:
 
     def generation(self) -> int:
         return self._generation
+
+    # --------------------------------------------------------------- filing
+    #
+    # All through OntoDAG's own verbs, so an EagerOntoDAG sees every edit and
+    # `commit()` persists it: `reclassify` (assert-before-retract, ontodag's
+    # own ordering) for retraction, `put` for relabel (metadata rides on the
+    # Item), `remove` (contraction — for a leaf object simply its removal).
+
+    def _object_node(self, ref: str):
+        node = self._dag.nodes.get(ref)
+        if node is None or not self._is_object(node):
+            raise KeyError(ref)
+        return node
+
+    def asserted(self, ref: str) -> frozenset[str]:
+        node = self._object_node(ref)
+        return frozenset(p.name for p in node.parents if p is not self._dag.root)
+
+    def retract(self, ref: str, attrs: Iterable[str]) -> None:
+        node = self._object_node(ref)
+        drop = [a for a in set(attrs) if a in self.asserted(ref)]
+        if drop:
+            self._dag.reclassify([node.name], to=(), from_=drop)
+        self._generation += 1
+
+    def relabel(self, ref: str, label: str) -> None:
+        node = self._object_node(ref)
+        metadata = {**node.metadata, OBJECT_KEY: True, LABEL_KEY: label}
+        # `put` under the current parents changes nothing structurally and
+        # carries the new metadata — the one write path a persistence-backed
+        # DAG is guaranteed to notice.
+        self._dag.put(Item(node.name, metadata=metadata), sorted(self.asserted(ref)))
+        self._generation += 1
+
+    def remove_object(self, ref: str) -> None:
+        self._dag.remove(self._object_node(ref))
+        self._generation += 1
+
+    def persist(self) -> None:
+        commit = getattr(self._dag, "commit", None)
+        if callable(commit):
+            commit()

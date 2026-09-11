@@ -12,6 +12,30 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.5.0] — 2026-09-11
+
+### Added
+
+- **v0.1 filing** on the fsspec surface (SPEC §3): `pipe_file`, `put_file`,
+  `open(path, "wb")` store bytes on Swarm through swarmfs and classify them;
+  `rm` retracts the classification a path asserts (an object left with none
+  waits in `/.unfiled/`; `rm /.unfiled/x` forgets it); `mv` reclassifies or
+  relabels, to and from `/.unfiled/`; `cp_file` within the view is an intent
+  union; `cp_file("/.swarm/<ref>", dst)` and the new `classify(ref, path)`
+  file existing Swarm content without re-uploading. Bytes never move;
+  identical content is one object; every operation persists the DAG once.
+  A missing stamp is a `PermissionError` before any upload.
+- `ConceptIndex` protocol: `asserted`, `retract`, `relabel`,
+  `remove_object`, `persist`, on both implementations.
+
+### Changed
+
+- `rm` refuses to retract by implication (DESIGN_DECISIONS #23): an object
+  reachable at a path it was not filed at is not removed there; the error
+  names where it is filed.
+- `tests/test_readonly.py` → `tests/test_filing.py`; the lattice-edit
+  refusals (`mkdir`, `rmdir`, `touch`) stay tested there.
+
 ## [0.4.0] — 2026-09-11
 
 ### Changed

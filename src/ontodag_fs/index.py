@@ -87,3 +87,44 @@ class ConceptIndex(Protocol):
         """Monotonic counter bumped on every mutation, for cache
         invalidation (SPEC §4)."""
         ...
+
+    # -- filing (v0.1) ------------------------------------------------------
+    #
+    # Writes are classification; bytes never move (DESIGN_DECISIONS #7).
+    # Every method below is a pure index edit and bumps `generation()`.
+
+    def add_object(self, ref: str, label: str, attrs: Iterable[str] = ()) -> None:
+        """File `ref` under `attrs` (raw attribute names; the implementation
+        canonicalizes/closes). Filing a known ref again is an intent UNION —
+        dedup by content address — and a non-empty `label` replaces the old
+        one. Raises UnknownAttributeError for an attribute not in the
+        lattice."""
+        ...
+
+    def asserted(self, ref: str) -> frozenset[str]:
+        """The attributes *asserted* for `ref` — its direct classifications,
+        canonical names, not their closure. Empty for an unfiled object.
+        Raises KeyError for an unknown ref."""
+        ...
+
+    def retract(self, ref: str, attrs: Iterable[str]) -> None:
+        """Drop these asserted attributes from `ref` (names not asserted are
+        ignored). An object left with none is *unfiled* — it stays known and
+        reachable under `/.unfiled/`; nothing is deleted."""
+        ...
+
+    def relabel(self, ref: str, label: str) -> None:
+        """Change the display label. Identity is untouched."""
+        ...
+
+    def remove_object(self, ref: str) -> None:
+        """Forget `ref` entirely: the index no longer knows it. The bytes
+        stay on Swarm regardless — content addressing has no delete."""
+        ...
+
+    def persist(self) -> None:
+        """Make prior mutations durable if the backing store needs telling
+        (an EagerOntoDAG commits a new version; an in-memory index does
+        nothing). The filesystem calls this once per write operation, so a
+        `mv` is one version, not two."""
+        ...

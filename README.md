@@ -80,14 +80,19 @@ worked examples of every capability.
 
 ## Status
 
-**v0 — read-only view.** Browsing (`ls`, `tree`, `cat`, `info`, FUSE mount)
+**v0.1 — browse and file.** Browsing (`ls`, `tree`, `cat`, `info`, FUSE mount)
 is complete and tested, and `--as-of ROOT` browses any past version of a store
 that keeps them (`rs:`/`swarm:`) — a version *is* a root, so this only hydrates
-from a different one. Filing through the filesystem (`cp` into a concept
-directory, `rm` as reclassification, `mv` between concepts) is **v0.1**, in
-progress; today filing is done with a short Python helper (see the User
-Guide). The lattice itself (creating categories) is edited through OntoDAG's
-own API, never through the mount. See [ROADMAP.md](ROADMAP.md).
+from a different one. **Filing** works through the fsspec surface:
+`fs.put_file(local, "/dessert/italian/tiramisu.md")` stores the bytes on Swarm
+and classifies them in one step, `rm` retracts a classification (an object left
+with none waits in `/.unfiled/`), `mv` reclassifies or relabels, `cp` within
+the view is an intent union, and `cp /.swarm/<ref> /<concept>/<name>` classifies
+existing Swarm content without re-uploading. Bytes never move; identical
+content filed twice is one object. The FUSE mount is still read-only (writing
+through it needs swarmfs's writable mounter, its follow-up), and the lattice
+itself (creating categories) is edited through OntoDAG's own API, never through
+the view. See [ROADMAP.md](ROADMAP.md).
 
 ## Architecture
 
@@ -132,7 +137,7 @@ DuckDB, …) for free.
 ```console
 $ git clone https://github.com/petfold/ontodag-fs && cd ontodag-fs
 $ python3 -m venv .venv && .venv/bin/pip install -e ".[test]"
-$ .venv/bin/pytest                 # 288 tests
+$ .venv/bin/pytest                 # 315 tests
 ```
 
 The test suite runs entirely offline — no Bee node, no FUSE — and every

@@ -11,6 +11,8 @@ v0 surface: read-only. All write methods raise NotImplementedError.
 
 from __future__ import annotations
 
+import errno
+import io
 import os
 import posixpath
 import re
@@ -19,6 +21,7 @@ from collections import OrderedDict
 from typing import Iterable, Sequence
 
 from fsspec import AbstractFileSystem
+from fsspec.asyn import sync
 from fsspec.spec import AbstractBufferedFile
 
 from .index import ConceptIndex, ObjectInfo, UnknownAttributeError
@@ -28,7 +31,6 @@ _SWARM_REF_RE = re.compile(r"^[0-9a-f]{64}(?:[0-9a-f]{64})?$", re.IGNORECASE)
 # label~shorthash disambiguation: 8+ hex chars after the final '~' of the stem
 _SUFFIX_RE = re.compile(r"^(?P<label>.*)~(?P<hash>[0-9a-fA-F]{8,})$", re.DOTALL)
 
-_V01 = "ontodag-fs v0 is read-only; filing (writes) lands in v0.1"
 _DEFERRED = (
     "lattice editing through the mount is deferred — concept creation/removal "
     "goes through OntoDAG's own API (see DESIGN_DECISIONS.md)"
@@ -121,6 +123,28 @@ class _RawSwarmFile(AbstractBufferedFile):
 
     def _fetch_range(self, start, end):
         return self.fs._swarm_cat(self.ref, start, end)
+
+
+class _FilingFile(AbstractBufferedFile):
+    """`open(path, "wb")`: buffer everything, file it on close.
+
+    Content addressing needs the whole object before it has an identity, so
+    there is nothing to stream — the bytes are collected and handed to
+    `pipe_file` as one upload + one classification when the file closes."""
+
+    def __init__(self, fs, path, **kwargs):
+        self._spool = io.BytesIO()
+        super().__init__(fs, path, mode="wb", **kwargs)
+
+    def _initiate_upload(self):
+        self._spool = io.BytesIO()
+
+    def _upload_chunk(self, final=False):
+        self.buffer.seek(0)
+        self._spool.write(self.buffer.read())
+        if final:
+            self.fs.pipe_file(self.path, self._spool.getvalue())
+        return True
 
 
 # ------------------------------------------------------------------------ fs
@@ -498,8 +522,12 @@ class OntoDAGFileSystem(AbstractFileSystem):
         cache_options=None,
         **kwargs,
     ):
+        if mode == "wb":
+            self._filing_target(path)  # fail before any bytes are buffered
+            return _FilingFile(self, self._join(self._parts(path)),
+                               block_size=block_size, cache_options=cache_options)
         if mode != "rb":
-            raise NotImplementedError(f"open(mode={mode!r}): {_V01}")
+            raise NotImplementedError(f"open(mode={mode!r}): only rb and wb")
         parts = self._parts(path)
         if parts and parts[0] == ".swarm" and len(parts) > 2:
             return self.swarm.open("/".join(parts[1:]), mode="rb")
@@ -524,8 +552,17 @@ class OntoDAGFileSystem(AbstractFileSystem):
         self._extents.clear()
 
     # ------------------------------------------------------------ write ops
-    # v0 is read-only for objects; the lattice is read-only through the
-    # mount in every version so far (SPEC §3, DESIGN_DECISIONS.md #8).
+    # v0.1 filing (SPEC §3, DESIGN_DECISIONS #7): writes are classification,
+    # bytes never move. The lattice stays read-only through the mount in
+    # every version so far (#8) — mkdir/rmdir refuse, touch is rejected.
+    #
+    # Retraction rule (decided 2026-09-11, refining SPEC §3 `rm`): `rm` at a
+    # path retracts the object's *asserted* attributes that lie in the
+    # path's closure. An object that appears at a path only by implication
+    # (rex, asserted `dog`, seen at /pet because dog ⊂ pet) cannot be
+    # removed *there*: retracting `dog` would also take him out of /mammal,
+    # which the path never named — so that is refused (EPERM) with the
+    # paths where it can be done. Keeps invariant 4 (rm locality) honest.
 
     def mkdir(self, path, create_parents=True, **kwargs):
         raise NotImplementedError(f"mkdir: {_DEFERRED}")
@@ -536,26 +573,233 @@ class OntoDAGFileSystem(AbstractFileSystem):
     def rmdir(self, path):
         raise NotImplementedError(f"rmdir: {_DEFERRED}")
 
-    def pipe_file(self, path, value, **kwargs):
-        raise NotImplementedError(f"pipe_file: {_V01}")
-
-    def put_file(self, lpath, rpath, **kwargs):
-        raise NotImplementedError(f"put_file: {_V01}")
-
-    def rm(self, path, recursive=False, maxdepth=None):
-        raise NotImplementedError(f"rm: {_V01}")
-
-    def rm_file(self, path):
-        raise NotImplementedError(f"rm: {_V01}")
-
-    def mv(self, path1, path2, **kwargs):
-        raise NotImplementedError(f"mv: {_V01}")
-
-    def cp_file(self, path1, path2, **kwargs):
-        raise NotImplementedError(f"cp: {_V01}")
-
     def touch(self, path, truncate=True, **kwargs):
         raise NotImplementedError(
             "touch: rejected — every empty file has the same content address "
             "(SPEC §3, explicitly rejected mappings)"
         )
+
+    # -- targets -------------------------------------------------------------
+
+    def _filing_target(self, path) -> tuple[list[str], str, str]:
+        """Split a destination into (attributes as typed, label, normalized
+        path), validating that the concept exists. `/.unfiled/<label>` is a
+        valid target (no attributes); `.all/` files at its concept."""
+        parts = self._parts(path)
+        norm = self._join(parts)
+        if not parts:
+            raise IsADirectoryError(norm)
+        *dir_parts, base = parts
+        if not base or base in (".all", ".swarm", ".unfiled"):
+            raise IsADirectoryError(norm)
+        if dir_parts and dir_parts[0] == ".swarm":
+            raise PermissionError(
+                errno.EPERM,
+                "/.swarm/ is read-through by content address; file the object "
+                "under a concept (cp /.swarm/<ref> /<concept>/<name> classifies "
+                "it without re-uploading)", norm)
+        if dir_parts and dir_parts[-1] == ".all":
+            dir_parts = dir_parts[:-1]
+        if dir_parts and dir_parts[0] == ".unfiled":
+            if len(dir_parts) != 1:
+                raise FileNotFoundError(norm)
+            attrs: list[str] = []
+        else:
+            attrs = [decode_component(a) for a in dir_parts]
+            if any(a.startswith(".") for a in attrs):
+                raise FileNotFoundError(norm)
+            try:
+                self.index.closure(attrs)
+            except UnknownAttributeError as exc:
+                raise FileNotFoundError(
+                    errno.ENOENT,
+                    f"no such concept ({exc}); categories are created with "
+                    "OntoDAG's own API (`odag put`), mkdir is deferred", norm
+                ) from None
+        return attrs, decode_component(base), norm
+
+    def _source_object(self, path) -> tuple[ObjectInfo, list[str], str]:
+        """Resolve a source path to (object, attributes as typed, normalized
+        path). Directories are refused: the lattice is not edited here."""
+        parts = self._parts(path)
+        norm = self._join(parts)
+        if not parts or (parts[0] == ".swarm"):
+            raise IsADirectoryError(norm) if not parts else PermissionError(
+                errno.EPERM, "/.swarm/ is read-through; nothing to file or "
+                "unfile there", norm)
+        if self.isdir(norm) and not self.isfile(norm):
+            raise IsADirectoryError(
+                errno.EISDIR, f"{_DEFERRED}", norm)
+        obj = self._lookup_file(parts, norm)
+        dir_parts = parts[:-1]
+        if dir_parts and dir_parts[-1] == ".all":
+            dir_parts = dir_parts[:-1]
+        if dir_parts and dir_parts[0] == ".unfiled":
+            return obj, [], norm
+        return obj, [decode_component(a) for a in dir_parts], norm
+
+    def _retract_at(self, obj: ObjectInfo, attrs: list[str], norm: str,
+                    keep: frozenset[str] = frozenset()) -> None:
+        """The retraction rule (see the section comment). ``keep``: attributes
+        the caller is asserting at the same time (`mv`'s destination closure)
+        — never retracted, so `mv /dessert/italian/x /dessert/x` drops
+        `italian` and leaves `dessert`."""
+        if not attrs:  # /.unfiled/<x>: nothing is asserted; caller decides
+            return
+        path_closure = self.index.closure(attrs)
+        asserted = self.index.asserted(obj.ref)
+        drop = asserted & path_closure
+        if not drop:
+            where = ", ".join(f"/{encode_component(a)}/{encode_component(obj.label)}"
+                              for a in sorted(asserted)) or "/.unfiled/"
+            raise PermissionError(
+                errno.EPERM,
+                f"{obj.label} is not filed at this path — it is filed as "
+                f"{sorted(asserted)} and only appears here by implication. "
+                f"Retract it where it is asserted: {where}", norm)
+        drop -= keep
+        if drop:
+            self.index.retract(obj.ref, drop)
+
+    def _done(self) -> None:
+        self.index.persist()
+        self.invalidate_cache()
+
+    # -- bytes ---------------------------------------------------------------
+
+    def _store_bytes(self, data: bytes) -> str:
+        """Upload through swarmfs (its stamp policy, redundancy, encryption,
+        pinning) and return the reference. A missing/unusable stamp is a
+        PermissionError with the reason, before any byte leaves (SPEC §3)."""
+        from swarmfs.exceptions import StampError
+        from swarmfs.stamps import StampManager
+
+        client = self.swarm.client
+        try:
+            batch = sync(self.swarm.loop, StampManager(client).resolve,
+                         getattr(self.swarm, "stamp", None))
+        except StampError as exc:
+            raise PermissionError(
+                errno.EACCES,
+                f"no valid postage stamp — {exc}. Writing to Swarm costs "
+                "postage: pass stamp=<batch id> to the swarmfs filesystem "
+                "(or leave it on auto with a usable batch on the node); "
+                "`swarm-cli stamp buy` gets one") from None
+        kwargs = {}
+        for opt in ("redundancy", "encrypt", "pin"):
+            val = getattr(self.swarm, opt, None)
+            if val is not None and val is not False:
+                kwargs[opt] = val
+        ref = sync(self.swarm.loop, client.bytes_post, data, batch, **kwargs)
+        ref = getattr(ref, "reference", ref)  # ACT-protected swarmfs: ActUpload
+        self._sizes[ref] = len(data)
+        return ref
+
+    # -- the verbs -----------------------------------------------------------
+
+    def classify(self, ref: str, path: str) -> str:
+        """Classify-by-reference: file an existing Swarm reference at `path`
+        (`/<concepts...>/<label>`) WITHOUT uploading anything. Filing a known
+        object again unions intents (dedup by content address); the label is
+        set only for a new object. Returns the reference. The workflow behind
+        `cp /.swarm/<ref> /<concept>/<name>` and the CLI's future `file`."""
+        ref = ref.lower()
+        if not _SWARM_REF_RE.match(ref):
+            raise ValueError(f"not a Swarm reference (64/128 hex): {ref!r}")
+        attrs, label, _norm = self._filing_target(path)
+        known = self.index.get_object(ref)
+        self.index.add_object(ref, "" if known else label, attrs)
+        self._done()
+        return ref
+
+    def pipe_file(self, path, value, **kwargs):
+        """Store `value` on Swarm and file it at `path` — the classification
+        write (SPEC §3). Identical bytes filed elsewhere become one object
+        with the union of intents. Returns the Swarm reference."""
+        attrs, label, _norm = self._filing_target(path)
+        ref = self._store_bytes(bytes(value))
+        self.index.add_object(ref, label, attrs)
+        self._done()
+        return ref
+
+    def put_file(self, lpath, rpath, callback=None, **kwargs):
+        """Local file → Swarm bytes → classification at `rpath` (a
+        directory-shaped rpath takes the local basename)."""
+        if self.isdir(rpath):
+            rpath = posixpath.join(self._join(self._parts(rpath)),
+                                   encode_component(os.path.basename(lpath)))
+        with open(lpath, "rb") as fh:
+            return self.pipe_file(rpath, fh.read())
+
+    def rm_file(self, path):
+        """Retract the classification `path` asserts (see the retraction
+        rule). An object left unclassified appears under `/.unfiled/`; bytes
+        are never touched. `rm /.unfiled/<x>` forgets the object entirely —
+        the bytes stay on Swarm regardless, content addressing has no delete."""
+        obj, attrs, norm = self._source_object(path)
+        if self._parts(norm)[0] == ".unfiled":
+            self.index.remove_object(obj.ref)
+        else:
+            self._retract_at(obj, attrs, norm)
+        self._done()
+
+    def rm(self, path, recursive=False, maxdepth=None):
+        for p in ([path] if isinstance(path, (str, os.PathLike)) else path):
+            self.rm_file(p)
+
+    def mv(self, path1, path2, recursive=False, maxdepth=None, **kwargs):
+        """Same object, new place: assert `path2`'s concept, then retract
+        `path1`'s (ontodag's own order — a refused move leaves the store
+        untouched). A new basename in the same directory is a label rename.
+        `/.unfiled/<x>` works as either end: filing an unfiled object, or
+        unfiling one (all asserted attributes retracted)."""
+        obj, src_attrs, src_norm = self._source_object(path1)
+        dst_attrs, label, dst_norm = self._filing_target(path2)
+        same_place = (not src_attrs and not dst_attrs and
+                      self._parts(src_norm)[0] == self._parts(dst_norm)[0]) or (
+            bool(src_attrs) and bool(dst_attrs)
+            and self.index.closure(src_attrs) == self.index.closure(dst_attrs))
+        if same_place:
+            if label != obj.label:
+                self.index.relabel(obj.ref, label)
+            self._done()
+            return
+        if dst_attrs:
+            self.index.add_object(obj.ref, "", dst_attrs)
+        if src_attrs:
+            keep = self.index.closure(dst_attrs) if dst_attrs else frozenset()
+            self._retract_at(obj, src_attrs, src_norm, keep=keep)
+        if not dst_attrs and src_attrs:
+            # moved *to* /.unfiled: whatever the path did not cover goes too
+            remaining = self.index.asserted(obj.ref)
+            if remaining:
+                self.index.retract(obj.ref, remaining)
+        if label != obj.label:
+            self.index.relabel(obj.ref, label)
+        self._done()
+
+    def cp_file(self, path1, path2, **kwargs):
+        """Within the mount: intent union — the object also appears at
+        `path2`'s concept; no bytes move, the label is unchanged (one object,
+        one label). From `/.swarm/<ref>` (or a path inside a Swarm
+        collection): classify-by-reference, labelled by the destination
+        basename. Cross-filesystem copies are `put_file`/`get_file`."""
+        parts = self._parts(path1)
+        if parts and parts[0] == ".swarm" and len(parts) >= 2:
+            if len(parts) == 2:
+                ref = parts[1]
+            else:
+                inner = self.swarm.info("/".join(parts[1:]))
+                ref = inner.get("reference")
+                if not ref:
+                    raise IsADirectoryError(self._join(parts))
+            self.classify(ref, path2)
+            return
+        obj, _src_attrs, _src_norm = self._source_object(path1)
+        dst_attrs, _label, _dst_norm = self._filing_target(path2)
+        if not dst_attrs:
+            raise PermissionError(
+                errno.EPERM, "cp to /.unfiled/ would unfile the object; use "
+                "mv, or rm at the places it is filed", _dst_norm)
+        self.index.add_object(obj.ref, "", dst_attrs)
+        self._done()

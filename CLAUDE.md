@@ -47,6 +47,17 @@ ceiling is **<0.18.0** since 2026-08-09.
 
 ## Release state
 
+**Published 0.5.0 (2026-09-11)** — v0.1 filing on the fsspec surface
+(`pipe_file`/`put_file`/`open("wb")`, `rm`, `mv`, `cp_file`, `classify`;
+`ConceptIndex` grew `asserted`/`retract`/`relabel`/`remove_object`/`persist`).
+Verified live against a Swarm-backed `EagerOntoDAG` (RecordStore over
+BeeBytesStore on the local Bee 2.8.2 node): file, union, move keeping the
+shared attribute, relabel, read from a fresh process, retract to `/.unfiled/`,
+forget — every step persisted as one store version. That live run caught the
+first `mv` retracting an attribute the destination shared (fixed, regression
+test). Suite 315 with the CI guard. DESIGN_DECISIONS #23 records the `rm`
+rule (retract what the path asserts; refuse by implication).
+
 **Published 0.4.0 (2026-09-11)** — `odag-fs mount` goes through
 `swarmfs.fuse.mount(fs=...)` (swarmfs ≥ 0.10.1): honestly read-only (kernel
 `ro` + EROFS), `0444`/`0555`, stable timestamps, errno mapping — replacing
@@ -94,9 +105,12 @@ nothing at the earlier root). `CHANGELOG.md` — new in this release, back-fille
   what is *used*.
 - **swarmfs>=0.8.0** for the public raw-reference surface.
 - Suite: 287 with the Bee gate open, 286 + 1 skip without a node.
-- Still v0 in capability: this is a **read-only view**. Filing through the
-  filesystem (`cp`/`rm`/`mv` as classification) is v0.1 and unbuilt; the lattice
-  itself is edited through ontodag, never through the mount.
+- **v0.1 filing shipped 2026-09-11** on the fsspec surface: `put_file`/
+  `pipe_file`/`open("wb")` store + classify, `rm` retracts (DESIGN_DECISIONS
+  #23: only what the path asserts — never by implication), `mv` reclassifies/
+  relabels, `cp_file` unions, `classify(ref, path)` files existing content.
+  The FUSE mount stays read-only until swarmfs's writable mounter; the
+  lattice itself is edited through ontodag, never through the view.
 
 ## Architecture and division of labor
 

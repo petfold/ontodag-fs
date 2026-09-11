@@ -1,8 +1,9 @@
 # SPEC.md — ontodag-fs v0 / v0.1
 
-Status: agreed design, ready to implement. Scope split: **v0 = read-only view**,
-**v0.1 = filing (writes)**. Anything not listed here is out of scope (see
-ROADMAP.md).
+Status: v0 and v0.1 implemented (filing landed 2026-09-11). Scope split:
+**v0 = read-only view**, **v0.1 = filing (writes)** — through the fsspec
+surface; through the FUSE mount writes wait on swarmfs's writable mounter.
+Anything not listed here is out of scope (see ROADMAP.md).
 
 ## 1. Data model
 
@@ -143,18 +144,20 @@ Constructor takes an OntoDAG instance/handle and a swarmfs filesystem instance
 | `isdir` / `isfile` | Directory iff resolves to a concept or reserved namespace; file iff basename matches an object. Note a name can be both an attribute and a label — attribute/concept wins for `isdir`, object wins for `isfile`; document this and test it. |
 | `checksum(path)` | The Swarm reference (content address — it IS the checksum). |
 
-Unsupported in v0 (raise NotImplementedError with a one-line reason):
-`mkdir`, `rmdir`, `pipe_file`, `put_file`, `rm`, `mv`, `touch`.
+Unsupported (raise NotImplementedError with a one-line reason): `mkdir`,
+`rmdir`, `touch` — the lattice is not edited here; see § Explicitly rejected.
 
 ### v0.1 (filing)
 
 | Method | Behavior |
 |---|---|
 | `pipe_file(path, data)` / `put_file(lpath, rpath)` | Split rpath → (attrset, label). Upload bytes via swarmfs → reference. Assert in OntoDAG: object(reference) intent ⊇ closure(attrset); set label. If the reference already exists as an object → **intent union, no re-upload** (dedup by content address). Requires a valid postage stamp via swarmfs config; on missing/expired stamp raise PermissionError("no valid postage stamp — see swarmfs configuration"). |
-| `rm(path)` | Resolve to (object, concept-at-path). Retract the classification: intent ← intent minus the attributes asserted by this path that are not implied by the remaining intent. If intent becomes empty → object appears under `/.unfiled/`. NEVER touches bytes. `rm /.unfiled/x` → remove the object from OntoDAG's index entirely (bytes persist on Swarm regardless — say so in the docstring). |
-| `mv(src, dst)` | Same object, different concept dirs: retract(src) + assert(dst) atomically w.r.t. the OntoDAG API. Label rename (same dir, new basename): update label only. |
-| `cp(src, dst)` within the mount | Alias for assert(dst) — intent union. No bytes move. Cross-filesystem cp (local→mount) is `put_file`. |
-| Filing an existing Swarm ref | `pipe_file` variant / CLI: given `/.swarm/<ref>` as source and a concept path as dst → classify WITHOUT uploading. This is the classify-by-reference workflow. |
+| `rm(path)` | Resolve to (object, concept-at-path). Retract the classification: drop the object's **asserted** attributes that lie in `closure(path)` (refined 2026-09-11, DESIGN_DECISIONS #23). If none does — the object is at this path only by implication — refuse with EPERM naming where it is asserted. If the asserted set becomes empty → object appears under `/.unfiled/`. NEVER touches bytes. `rm /.unfiled/x` → remove the object from OntoDAG's index entirely (bytes persist on Swarm regardless — say so in the docstring). |
+| `mv(src, dst)` | Same object, different concept dirs: assert(dst), then retract(src) *minus* `closure(dst)` — what the destination also asserts stays (`mv /dessert/italian/x /dessert/x` drops `italian`, keeps `dessert`); `rm`'s refusal rule applies to the retract half, and asserting first means a refused move leaves the store untouched. Label rename (same concept, new basename): update label only. `/.unfiled/` works as either end. |
+| `cp(src, dst)` within the mount | Alias for assert(dst) — intent union. No bytes move; the label is unchanged (one object, one label). `cp` to `/.unfiled/` is refused (that is `mv`). Cross-filesystem cp (local→mount) is `put_file`. |
+| Filing an existing Swarm ref | `cp_file("/.swarm/<ref>", dst)` or `classify(ref, dst)`: classify WITHOUT uploading; a path *inside* a Swarm collection (`/.swarm/<ref>/<sub>`) resolves to the file's own reference first. A new object takes dst's basename as label; a known one keeps its label. |
+| `open(path, "wb")` | Buffers, then `pipe_file` on close (content addressing needs the whole object). |
+| Persistence | Every verb above ends with `index.persist()` — one store version per operation (`mv` is one, not two). |
 
 ### Explicitly rejected mappings
 

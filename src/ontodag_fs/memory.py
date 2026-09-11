@@ -143,3 +143,25 @@ class InMemoryIndex:
 
     def generation(self) -> int:
         return self._generation
+
+    # --------------------------------------------------------------- filing
+
+    def asserted(self, ref: str) -> frozenset[str]:
+        return self._objects[ref][1]
+
+    def retract(self, ref: str, attrs: Iterable[str]) -> None:
+        label, asserted = self._objects[ref]
+        self._objects[ref] = (label, asserted - frozenset(attrs))
+        self._generation += 1
+
+    def relabel(self, ref: str, label: str) -> None:
+        _, asserted = self._objects[ref]
+        self._objects[ref] = (label, asserted)
+        self._generation += 1
+
+    def remove_object(self, ref: str) -> None:
+        del self._objects[ref]
+        self._generation += 1
+
+    def persist(self) -> None:
+        """Nothing to do: memory is the store."""

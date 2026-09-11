@@ -7,12 +7,10 @@ updated (mark items DONE with a date).
 
 - [x] **v0** read-only ontology view — shipped; the manual mount milestone was
       executed 2026-07-22 against a real Bee node.
-- [ ] **v0.1** filing — **not shipped** (corrected 2026-09-11: the tick
-      from commit 112be9c was wrong). `pipe_file`, `put_file`, `rm`, `mv`,
-      `cp_file` and `touch` exist in `fs.py` only as refusals
-      (`NotImplementedError`, "v0 is read-only; filing lands in v0.1"), and
-      `tests/test_readonly.py` asserts exactly that. Filing today is the
-      Python helper in the User Guide.
+- [x] **v0.1** filing — shipped 2026-09-11 (built the same day the wrong
+      tick was corrected): `pipe_file`/`put_file`/`open("wb")`, `rm`, `mv`,
+      `cp_file`, `classify` on the fsspec surface; through the FUSE mount
+      writes still wait on swarmfs's writable mounter.
 - [ ] **v1** workflow layer — **not shipped** (same correction). The
       `odag-fs` CLI carries `ls`, `tree`, `cat`, `info`, `cd`, `pwd`,
       `mount`, `set`, `help` — no `file`, no `import`; `/.unfiled/` is
@@ -83,17 +81,27 @@ kernel (`pytest -m fuse`). When filing lands, the writable mount is swarmfs's
 
 ## v0.1 — filing
 
-*Status corrected 2026-09-11: none of the write side is implemented; every
-method below is a `NotImplementedError` refusal in `fs.py`, and the mount
-(now honestly read-only, EROFS) says so to the shell.*
+*Shipped 2026-09-11 (the morning's correction said none of this existed;
+the afternoon built it). Design refinement recorded as DESIGN_DECISIONS #23:
+`rm` retracts the asserted attributes in the path's closure and refuses to
+retract by implication.*
 
-- [ ] `pipe_file` / `put_file` (store + assert, dedup-by-content), `rm`
-  (retraction, `/.unfiled/`), `mv`, in-mount `cp` per SPEC §3.
-- [ ] Classify-by-reference primitive (from `/.swarm/<ref>`).
-- [ ] Postage-stamp error surfacing (PermissionError with actionable message).
-- [x] Invariant tests that hold already on the read side (`tests/test_invariants.py`:
-  order-insensitivity, redundancy, name↔bytes, extent coverage, dot-attribute
-  rejection on write). The write-path invariants come with the write path.
+- [x] `pipe_file` / `put_file` / `open(path, "wb")` (store + assert,
+  dedup-by-content), `rm` (retraction, `/.unfiled/`; `rm /.unfiled/x`
+  forgets), `mv` (reclassify, relabel, to/from `/.unfiled/`), in-mount `cp`
+  (intent union) per SPEC §3. The `ConceptIndex` protocol grew the filing
+  verbs — `asserted`, `retract`, `relabel`, `remove_object`, `persist` —
+  implemented identically on `InMemoryIndex` and `OntoDAGIndex` (the latter
+  through ontodag's own `reclassify`/`put`/`remove`, so an `EagerOntoDAG`
+  commits one version per filesystem operation).
+- [x] Classify-by-reference primitive: `fs.classify(ref, path)`, also
+  `cp /.swarm/<ref> /<concept>/<name>` and from a path inside a Swarm
+  collection.
+- [x] Postage-stamp error surfacing: swarmfs's `StampError` becomes a
+  `PermissionError` with the fix spelled out, before any byte is uploaded.
+- [x] Invariant tests (`tests/test_filing.py`, both backends): 3 file-then-find,
+  4 rm locality, 5 content dedup, 7 no-byte-motion, plus the read-side ones
+  in `tests/test_invariants.py`.
 - Writing through the *mount* additionally needs swarmfs's writable mounter
   (its `--rw` follow-up): fsspec's raw wrapper's write path seeks a
   write-mode buffered file and fails, so it never worked for any fsspec
