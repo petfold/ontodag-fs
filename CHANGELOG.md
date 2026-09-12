@@ -12,6 +12,16 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.6.1] — 2026-09-13
+
+### Changed
+
+- **ontodag ceiling `<0.26.0`** (ceiling bump only): ontodag 0.25.0's
+  release gate ran this suite green against the candidate, and it passes
+  locally against the released 0.25.0 (313 passed, 2 skipped). Nothing
+  here uses 0.25's additions (role parameters naming nodes, `overlaps`/
+  `meet`, `items_only`, the dimension cache).
+
 ## [0.6.0] — 2026-09-11
 
 ### Added

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontodag-fs"
-version = "0.6.0"
+version = "0.6.1"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
@@ -53,7 +53,13 @@ dependencies = [
     # 0.17.1 (286 passed, 1 skipped). Nothing here uses 0.17's additions —
     # `ontodag.browse`, the packaged web app, `dispatch`'s out=/err= streams —
     # so the floor stays where a *use* put it.
-    "ontodag>=0.16.0,<0.24.0",
+    # <0.26.0 since 2026-09-13: the gate ran this suite green against the
+    # 0.25.0 candidate (role parameters naming nodes, overlaps/meet,
+    # items_only, the dimension cache; the overlap query mode built and
+    # withdrawn the same day never reached a release), and it passes locally
+    # against released 0.25.0 (313 passed, 2 skipped). Nothing here uses
+    # 0.25's additions.
+    "ontodag>=0.16.0,<0.26.0",
     # 0.8.0: read_reference/reference_size, the public raw-ref reads.
     # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —
     # `odag-fs mount` goes through it (read-only policy, errno mapping,

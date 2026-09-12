@@ -47,6 +47,11 @@ ceiling is **<0.18.0** since 2026-08-09.
 
 ## Release state
 
+**Published 0.6.1 (2026-09-13)** — a pin-only release raising the ontodag
+ceiling to `<0.26.0`: ontodag 0.25.0's downstream gate ran this suite green
+against the candidate, and the suite passes locally against the released
+0.25.0 (313 passed, 2 skipped). Nothing here uses 0.25's additions.
+
 **Published 0.6.0 (2026-09-11)** — `odag-fs mount --rw` (swarmfs ≥ 0.11.1):
 filing through the kernel — `cp` into a concept directory files, `rm`
 retracts, `mv` reclassifies/relabels, `mkdir` EOPNOTSUPP; stamp checked
@@ -164,7 +169,7 @@ real API, outside this repo.
 
 | Repo | Role | This repo's relationship |
 |---|---|---|
-| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.16.0,<0.24.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; the floor moved to 0.16.0 on 2026-08-06 for `Backend.load_at`, which `--as-of` uses; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment — the 0.16.0, 0.17.0 and 0.17.1 gates passed). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
+| `ontodag` | Concept DAG, FCA/MDL core | dependency — the index/classifier. Range is **>=0.16.0,<0.26.0** (floor: registry 3.0/4.0 canonical names — reduced rationals like `weight(9/2kg)` are why path components are percent-encoded — plus native-store metadata persistence; the floor moved to 0.16.0 on 2026-08-06 for `Backend.load_at`, which `--as-of` uses; ceiling: raised only after ontodag's downstream release gate runs this suite, see pyproject's comment — the 0.16.0, 0.17.0 and 0.17.1 gates passed). Its parametric dimensions surface here as virtual directories (shipped in ontodag-fs 0.1.0). See ROADMAP.md § "Upstream: ontodag dimension lattices" and DESIGN_DECISIONS.md #20. **A change to ontodag's canonical-name grammar is a change to this repo** — `tests/test_names.py` is the tripwire |
 | `swarmfs` | fsspec backend for Swarm | dependency — the bytestore. Its authoritative API is the test-pinned [swarmfs REFERENCE.md](https://github.com/petfold/swarmfs/blob/main/docs/REFERENCE.md) (local: `../swarmfs/docs/REFERENCE.md`). The private-`_read_reference` gap was closed 2026-08-04: swarmfs 0.8.0 grew public `read_reference`/`reference_size` (documented in its reference), and this repo's floor moved to `swarmfs>=0.8.0` |
 | `recordstore` | versioned key→record store over Swarm | indirect (via ontodag persistence; live tests use it directly). Authoritative API: the test-pinned [recordstore REFERENCE.md](https://github.com/petfold/recordstore/blob/main/docs/REFERENCE.md) |
 | `mdl-fca` | probabilistic FCA / MDL learning | not a dependency; consumes the same DAG upstream |
