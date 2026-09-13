@@ -12,6 +12,15 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.6.2] — 2026-09-13
+
+### Changed
+
+- **ontodag ceiling `<0.27.0`** (ceiling bump only): ontodag 0.26.0 adds
+  the category kind (`category-dimension`, registry 4.2 — additive, no
+  canonical name of an existing kind changes, prelude unchanged); this
+  suite passes against it from source. Nothing here uses the new kind.
+
 ## [0.6.1] — 2026-09-13
 
 ### Changed
