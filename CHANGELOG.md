@@ -12,6 +12,18 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [Unreleased]
+
+### Changed
+
+- **The upstream contract pin accepts ontodag's contract 0.2** beside
+  0.1 (`tests/test_upstream_contract.py`). Contract 0.2 (ontodag
+  2026-10-06, not yet released) states that every name is a class of
+  items and admits dimension terms over nodes such as `in(japan)`; it
+  changes none of G1–G6, and nothing here relies on what it refuses. The
+  pin had to move before ontodag's next release, whose gate runs this
+  suite from main.
+
 ## [0.6.3] — 2026-10-06
 
 ### Changed

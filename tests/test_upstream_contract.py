@@ -38,7 +38,16 @@ from ontodag.dag import OntoDAG
 # What this repo was built and tested against. Update deliberately, with the
 # canonical-name tests re-checked — not to make a red suite green.
 REGISTRY_MAJOR = "4"
-CONTRACT_VERSION = "0.1"
+# Every contract version the declared ontodag range can install, each one
+# reviewed against what this repo relies on. 0.2 (2026-10-06) states what an
+# arrow means — a name is a class of items, which is the reading concept
+# directories already had — and admits dimension terms over nodes (`in(japan)`,
+# `about(mars)`, `for(alice)`): they reach paths through the same
+# `_parse_parametric` seam as typed values. It refuses a graph-ordered term
+# filed under anything but its head, which no operation here does (objects go
+# *under* terms; `mkdir` is deferred). G1–G6 are unchanged. Reviewed
+# 2026-10-07 against ontodag main: 312 passed with 0.2 accepted.
+CONTRACT_VERSIONS = ("0.1", "0.2")
 
 
 class TestCompatibilitySignals:
@@ -59,10 +68,10 @@ class TestCompatibilitySignals:
     def test_contract_version_is_the_one_we_built_against(self):
         import ontodag
 
-        assert ontodag.CONTRACT_VERSION == CONTRACT_VERSION, (
+        assert ontodag.CONTRACT_VERSION in CONTRACT_VERSIONS, (
             f"ontodag's contract is {ontodag.CONTRACT_VERSION}, this repo was "
-            f"built against {CONTRACT_VERSION}. Read ontodag's docs/CONTRACT.md "
-            f"for what changed in G1–G6 before moving this."
+            f"built against {', '.join(CONTRACT_VERSIONS)}. Read ontodag's "
+            f"docs/CONTRACT.md for what changed in G1–G6 before adding it."
         )
 
 
