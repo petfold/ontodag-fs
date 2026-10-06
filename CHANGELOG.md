@@ -12,6 +12,18 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.6.3] — 2026-10-06
+
+### Changed
+
+- **ontodag ceiling `<0.30.0`** (ceiling bump only): ontodag's release
+  gate ran this suite green against the 0.27.0, 0.28.0 and 0.29.0
+  candidates (the embedder API; what a store shares; the `ontodag.act`
+  revocation fix), and it passes locally against the 0.29.0 wheel (313
+  passed, 2 skipped). Nothing here uses their additions. Until now
+  0.6.2's `<0.27.0` kept ontodag-fs from installing alongside 0.27.0 or
+  later.
+
 ## [0.6.2] — 2026-09-13
 
 ### Changed
