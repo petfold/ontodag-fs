@@ -16,8 +16,9 @@ changed, when" index.
 
 ### Changed
 
-- **The upstream contract pin accepts ontodag's contract 0.2** beside
-  0.1 (`tests/test_upstream_contract.py`). Contract 0.2 (ontodag
+- **The upstream contract pin accepts ontodag's contracts 0.2 and 0.3**
+  beside 0.1 (`tests/test_upstream_contract.py`). 0.3 adds narrower
+  relations between relation heads; nothing here declares heads. Contract 0.2 (ontodag
   2026-10-06, not yet released) states that every name is a class of
   items and admits dimension terms over nodes such as `in(japan)`; it
   changes none of G1–G6, and nothing here relies on what it refuses. The

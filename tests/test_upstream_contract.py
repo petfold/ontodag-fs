@@ -47,7 +47,11 @@ REGISTRY_MAJOR = "4"
 # filed under anything but its head, which no operation here does (objects go
 # *under* terms; `mkdir` is deferred). G1–G6 are unchanged. Reviewed
 # 2026-10-07 against ontodag main: 312 passed with 0.2 accepted.
-CONTRACT_VERSIONS = ("0.1", "0.2")
+# 0.3 (agreed 2026-10-07) adds narrower relations: a relation head filed
+# under another head of its kind (`departure ⊑ from`) makes its terms
+# answer the broader head's queries. Nothing here declares heads, and
+# G1–G6 are unchanged.
+CONTRACT_VERSIONS = ("0.1", "0.2", "0.3")
 
 
 class TestCompatibilitySignals:
