@@ -12,7 +12,7 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
-## [Unreleased]
+## [0.6.4] — 2026-10-07
 
 ### Changed
 
