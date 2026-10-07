@@ -23,6 +23,8 @@ changed, when" index.
   examples say `mass(...)`. Nothing here declares or relies on the
   prelude's heads.
 
+- **The upstream contract pin accepts ontodag's contract 0.4** (G7: versions
+  within a major only add answers), beside 0.1–0.3.
 - **The upstream contract pin accepts ontodag's contracts 0.2 and 0.3**
   beside 0.1 (`tests/test_upstream_contract.py`). 0.3 adds narrower
   relations between relation heads; nothing here declares heads. Contract 0.2 (ontodag

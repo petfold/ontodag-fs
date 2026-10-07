@@ -51,7 +51,10 @@ REGISTRY_MAJOR = "4"
 # under another head of its kind (`departure ⊑ from`) makes its terms
 # answer the broader head's queries. Nothing here declares heads, and
 # G1–G6 are unchanged.
-CONTRACT_VERSIONS = ("0.1", "0.2", "0.3")
+# Contract 0.4 (ontodag 2026-10-07) adds G7: within one major, a newer
+# ontodag never takes an answer away about a fixed store. A promise in our
+# favour; G1–G6 are unchanged.
+CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4")
 
 
 class TestCompatibilitySignals:
