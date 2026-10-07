@@ -72,8 +72,8 @@ Options:
                       `odag history` prints. Needs a store that keeps
                       versions (rs:PATH or swarm:NAME); this view is
                       read-only anyway, so nothing else changes
-  --raw               list canonical value names (weight(9%2F2kg)) instead
-                      of readable ones (weight(4500g)); same as
+  --raw               list canonical value names (mass(9%2F2kg)) instead
+                      of readable ones (mass(4500g)); same as
                       ONTODAG_SURFACE=0. Every spelling resolves either way.
 """
 
@@ -300,8 +300,8 @@ def _build_command_parser(with_globals: bool) -> argparse.ArgumentParser:
                                  "view here")
         parser.add_argument("--raw", action="store_true",
                             help="show canonical value names in listings "
-                                 "(weight(9%%2F2kg)) instead of readable ones "
-                                 "(weight(4500g)); same as ONTODAG_SURFACE=0")
+                                 "(mass(9%%2F2kg)) instead of readable ones "
+                                 "(mass(4500g)); same as ONTODAG_SURFACE=0")
     sub = parser.add_subparsers(dest="command", metavar="<command>")
 
     p = sub.add_parser("ls", help="list a concept directory")

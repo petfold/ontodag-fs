@@ -64,7 +64,7 @@ dependencies = [
     # shares; the ontodag.act revocation fix), and it passes locally against
     # the 0.29.0 wheel (313 passed, 2 skipped). Nothing here uses their
     # additions.
-    "ontodag>=0.16.0,<0.30.0",
+    "ontodag>=0.16.0,<0.31.0",
     # 0.8.0: read_reference/reference_size, the public raw-ref reads.
     # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —
     # `odag-fs mount` goes through it (read-only policy, errno mapping,

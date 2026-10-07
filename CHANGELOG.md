@@ -16,6 +16,13 @@ changed, when" index.
 
 ### Changed
 
+- **ontodag ceiling `<0.31.0`**: ontodag 0.30.0's release gate ran this
+  suite green against the candidate, and it passes locally against the
+  released source (313 passed, 2 skipped). 0.30 brings prelude v4, whose
+  mass head is `mass` (there is no `weight` head any more); the help text's
+  examples say `mass(...)`. Nothing here declares or relies on the
+  prelude's heads.
+
 - **The upstream contract pin accepts ontodag's contracts 0.2 and 0.3**
   beside 0.1 (`tests/test_upstream_contract.py`). 0.3 adds narrower
   relations between relation heads; nothing here declares heads. Contract 0.2 (ontodag
