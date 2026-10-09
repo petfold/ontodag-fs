@@ -13,6 +13,7 @@ switch, 2026-09-11).
 from __future__ import annotations
 
 import errno
+import importlib
 import os
 import shutil
 import stat
@@ -26,7 +27,7 @@ from conftest import build_zoo
 
 def _fuse_unavailable() -> str | None:
     try:
-        import fuse  # noqa: F401
+        importlib.import_module("fuse")
     except ImportError:
         return "fusepy not installed (pip install 'swarmfs[fuse]')"
     except OSError as e:  # fusepy: EnvironmentError('Unable to find libfuse')

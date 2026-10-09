@@ -21,3 +21,17 @@ jobs:
       # addopts in pyproject.toml excludes the `fuse` marker, so libfuse is
       # not needed here; FUSE integration tests run locally with `pytest -m fuse`.
       - run: pytest
+
+  # Unused and shadowed names (review 2026-10, question 9): in loopmarket a
+  # second definition of a function silently replaced the first and changed
+  # what users approve; pyflakes names that line. Pinned, so a new pyflakes
+  # release cannot turn the build red on its own.
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: pip install pyflakes==3.4.0
+      - run: git ls-files -- '*.py' | xargs python -m pyflakes

@@ -20,6 +20,9 @@ jobs:
       # ontodag.eager, which the released ontodag did not contain — a gate on
       # PyPI-resolved deps is what would have caught it.
       - run: pip install -e ".[test]"
+      # The lint is tests.yml's, repeated because a tag need not wait for it.
+      - run: pip install pyflakes==3.4.0
+      - run: git ls-files -- '*.py' | xargs python -m pyflakes
       # addopts in pyproject.toml excludes the `fuse` marker, so libfuse is
       # not needed here; FUSE integration tests run locally with `pytest -m fuse`.
       - run: pytest
