@@ -54,7 +54,12 @@ REGISTRY_MAJOR = "4"
 # Contract 0.4 (ontodag 2026-10-07) adds G7: within one major, a newer
 # ontodag never takes an answer away about a fixed store. A promise in our
 # favour; G1–G6 are unchanged.
-CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4")
+# Contract 0.5 (ontodag 2026-10-09) adds G8: a valid name's spelling, and
+# what the same filings store, change only with the registry MINOR. Also in
+# our favour, and the signal that matters most here, since paths are made of
+# names: a registry minor bump is where a directory name may move (the
+# canonical-name tests below catch it either way). G1–G7 are unchanged.
+CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4", "0.5")
 
 
 class TestCompatibilitySignals:
