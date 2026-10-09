@@ -117,22 +117,23 @@ class Session:
 
 def _build_fs(store_spec: str | None, bee_api: str | None, raw: bool = False,
               as_of: str | None = None):
-    # odag's CLI module is the authority on store specs/config; reusing its
-    # (private) helpers is accepted milestone tooling — the real CLI (v1)
-    # gets a public seam.
-    from ontodag.__main__ import _make_backend, _read_config, _resolve_store
+    # ontodag's public settings and stores modules (0.31, its issue #13) are
+    # the authority on store specs and config, so `odag-fs` opens exactly
+    # the stores `odag` does.
+    from ontodag.settings import read_config, resolve_store
+    from ontodag.stores import make_backend
 
     from swarmfs import SwarmFileSystem
 
     from . import OntoDAGFileSystem, OntoDAGIndex
 
-    backend = _make_backend(_resolve_store(store_spec))
+    backend = make_backend(resolve_store(store_spec))
     # A past version browses like any other: the view is read-only anyway, so
     # `--as-of` costs nothing here but a different root to hydrate from (needs
     # ontodag >= 0.16, whose backends grew `load_at`). Any prefix `odag history`
     # prints resolves; a store with no versions says so.
     dag = backend.load_at(as_of) if as_of else backend.load()
-    api = bee_api or os.environ.get("BEE_API") or _read_config().get("bee_api")
+    api = bee_api or os.environ.get("BEE_API") or read_config().get("bee_api")
     swarm = SwarmFileSystem(api_url=api) if api else SwarmFileSystem()
     return OntoDAGFileSystem(index=OntoDAGIndex(dag), swarm=swarm,
                              render_names=False if raw else None)
@@ -241,12 +242,12 @@ def cmd_mount(session: Session, args) -> None:
 def cmd_set(session: Session, args) -> None:
     """Show or change settings — same keys and config file as odag's `set`
     (~/.ontodag/config), so either tool's `set store` configures both."""
-    from ontodag.__main__ import (
-        _SETTINGS,
-        _normalize_spec,
-        _read_config,
-        _resolve_store,
-        _write_config,
+    from ontodag.settings import (
+        SETTINGS as _SETTINGS,
+        normalize_spec as _normalize_spec,
+        read_config as _read_config,
+        resolve_store as _resolve_store,
+        write_config as _write_config,
     )
 
     def effective(key: str) -> str:

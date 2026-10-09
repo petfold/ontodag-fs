@@ -22,12 +22,13 @@ Three kinds of dependency, each with its own failure mode:
   * **The canonical-name grammar itself**, which is what actually broke. Asserted
     directly, because a registry *minor* bump is compatible and a major one may
     not be, and either way the names are the thing paths are made of.
-  * **Private upstream API** (`_parse_parametric`, ontodag's CLI helpers,
-    swarmfs's raw-reference reads). No version bound protects these: they carry
-    no compatibility promise at all. These tests only catch *removal* — a rename
-    that keeps the behaviour will still pass, and a silent change of behaviour
-    will still slip. The real fix is public seams upstream, tracked as
-    ontodag issue #13 and ROADMAP § "Storage tiers".
+  * **Private upstream API** (swarmfs's raw-reference reads). No version bound
+    protects these: they carry no compatibility promise at all. These tests only
+    catch *removal* — a rename that keeps the behaviour will still pass, and a
+    silent change of behaviour will still slip. The real fix is public seams
+    upstream, tracked as ROADMAP § "Storage tiers". ontodag's side of this list
+    emptied with ontodag 0.31: `parse_term`, `ontodag.settings` and
+    `ontodag.stores` are public there (its issue #13), and this repo uses them.
 """
 
 from __future__ import annotations
@@ -122,7 +123,7 @@ class TestCapabilitiesTheFloorGuarantees:
         import tempfile
 
         from ontodag.dag import Item
-        from ontodag.__main__ import _load_native, _save_native
+        from ontodag.native import load as _load_native, save as _save_native
 
         dag = OntoDAG()
         dag.put(Item("ref", metadata={"object": True, "label": "x.txt"}), [])
@@ -183,7 +184,7 @@ class TestTheCanonicalNameGrammar:
     ])
     def test_canonical_form_is_what_paths_were_built_for(
             self, dag, asserted, canonical):
-        _head, _kind, got = dag._parse_parametric(asserted)
+        _head, _kind, got = dag.parse_term(asserted)
         assert got == canonical, (
             f"ontodag now canonicalises {asserted!r} to {got!r}, not "
             f"{canonical!r}. Typed-value paths resolve through these names, so "
@@ -194,7 +195,7 @@ class TestTheCanonicalNameGrammar:
         """The read surface maps this to ENOENT; if it ever stops raising, a
         misspelled value would silently become a valid empty directory."""
         with pytest.raises(ValueError):
-            dag._parse_parametric("weight(3zz)")
+            dag.parse_term("weight(3zz)")
 
 
 class TestPrivateUpstreamSurface:
@@ -203,28 +204,6 @@ class TestPrivateUpstreamSurface:
     Catches removal, not renaming-with-equivalent-behaviour. Each entry should
     shrink as public seams appear upstream.
     """
-
-    def test_dimension_parsing_hook_exists(self):
-        """OntoDAGIndex resolves typed path components through this. It degrades
-        to treating every name as opaque if absent — so without this test the
-        loss would show up as 'typed directories mysteriously vanished'."""
-        assert hasattr(OntoDAG(), "_parse_parametric"), (
-            "ontodag.dag.OntoDAG._parse_parametric is gone. ontodag-fs "
-            "resolves typed-value path components with it (ontodag_index.py); "
-            "find the public equivalent and switch to it."
-        )
-
-    def test_cli_store_helpers_exist(self):
-        """`odag-fs` opens the same stores as `odag` by reusing its resolution:
-        accepted milestone tooling until a public seam exists (ontodag #13)."""
-        import ontodag.__main__ as odag_cli
-
-        for name in ("_make_backend", "_read_config", "_resolve_store"):
-            assert hasattr(odag_cli, name), (
-                f"ontodag.__main__.{name} is gone; ontodag_fs/__main__.py "
-                f"builds its filesystem with it. See ontodag issue #13 for the "
-                f"public seam this is waiting on."
-            )
 
     def test_swarmfs_raw_reference_reads_exist(self):
         """Object bytes are addressed by reference, not by manifest path, and

@@ -58,14 +58,10 @@ class OntoDAGIndex:
         dimension; None for opaque names. A malformed parameter under a
         declared head is UnknownAttributeError — the filesystem maps it to
         FileNotFoundError, the right read-side answer."""
-        # Private upstream API (no public equivalent yet), so probe rather than
-        # import: a future ontodag that renames it degrades to opaque names
-        # instead of raising AttributeError on every lookup.
-        parse = getattr(self._dag, "_parse_parametric", None)
-        if parse is None:
-            return None
+        # ontodag's public `parse_term` (0.31): a Term(head, kind, canonical)
+        # or None, raising ValueError for a malformed parameter.
         try:
-            return parse(name)
+            return self._dag.parse_term(name)
         except ValueError as exc:
             raise UnknownAttributeError(f"{name}: {exc}") from exc
 

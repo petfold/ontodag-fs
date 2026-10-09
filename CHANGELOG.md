@@ -12,6 +12,21 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [Unreleased]
+
+### Changed
+
+- **ontodag's public layer instead of its CLI's private helpers (needs
+  ontodag 0.31).** `odag-fs` opens stores through `ontodag.settings`
+  (`read_config`, `resolve_store`, `normalize_spec`, `write_config`,
+  `SETTINGS`) and `ontodag.stores.make_backend`, and reads typed path
+  components with `OntoDAG.parse_term`, all public since ontodag 0.31
+  (its issue #13); before, it imported `_make_backend`, `_read_config`,
+  `_resolve_store` and the settings table from `ontodag.__main__` and
+  probed `_parse_parametric`. The two tests that guarded those private
+  names are gone with them. Floor `ontodag>=0.31.0`, ceiling `<0.32.0`,
+  to be confirmed by ontodag's release gate. Contract 0.6 accepted.
+
 ## [0.6.4] — 2026-10-07
 
 ### Changed

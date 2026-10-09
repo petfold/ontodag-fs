@@ -35,7 +35,7 @@ from ontodag_fs import OntoDAGFileSystem, OntoDAGIndex
 def _native_store_keeps_metadata() -> bool:
     """Does the installed ontodag persist node metadata in a `.od` file?"""
     try:
-        from ontodag.__main__ import _load_native, _save_native
+        from ontodag.native import load as _load_native, save as _save_native
     except ImportError:                                   # pragma: no cover
         return False
     with tempfile.TemporaryDirectory() as tmp:
@@ -60,7 +60,7 @@ LABELS = {"light": "light.txt", "heavy": "heavy.txt",
 @pytest.fixture()
 def filed(tmp_path):
     """Objects and typed values, round-tripped through a real .od file."""
-    from ontodag.__main__ import _load, _save
+    from ontodag.native import load as _load, save as _save
 
     dag = OntoDAG()
     for name, parents in (("parcel", []), ("doc", []), ("dimension", []),

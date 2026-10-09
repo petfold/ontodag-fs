@@ -78,7 +78,7 @@ def test_batch_stream_all_good_exits_zero(zoo, capsys):
 
 def _versioned_store(tmp_path):
     """An `rs:` store with two versions: rex only, then rex and tweety."""
-    from ontodag.__main__ import _make_backend
+    from ontodag.stores import make_backend as _make_backend
 
     from ontodag_fs import OntoDAGIndex
 
@@ -135,7 +135,7 @@ def test_an_unknown_version_is_reported(tmp_path, capsys):
 
 
 def test_a_plain_file_store_has_no_versions(tmp_path, capsys):
-    from ontodag.__main__ import _make_backend
+    from ontodag.stores import make_backend as _make_backend
 
     path = tmp_path / "store.od"
     _make_backend(str(path)).save(__import__("ontodag").OntoDAG())

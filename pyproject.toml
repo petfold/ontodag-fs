@@ -20,8 +20,12 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    # 0.16.0 is the floor since 2026-08-06, and this one is a *use*, not a
-    # precaution: `--as-of` calls ontodag's `Backend.load_at`, added in 0.16.0.
+    # 0.31.0 is the floor on this branch, a *use*: `odag-fs` opens stores
+    # through ontodag's public `ontodag.settings` and `ontodag.stores`, and
+    # reads typed path components with `OntoDAG.parse_term`, all public since
+    # 0.31 (ontodag issue #13), where it reached into ontodag's CLI module.
+    # 0.16.0 was the floor from 2026-08-06, also a *use*: `--as-of` calls
+    # ontodag's `Backend.load_at`, added in 0.16.0.
     # (Before it, the floor was 0.13.0 — registry 4.1's count kind and
     # prelude v3 — raised alongside the ceiling after each downstream gate.)
     # The original load-bearing reasons for a floor at all date to 0.11.0:
@@ -64,7 +68,9 @@ dependencies = [
     # shares; the ontodag.act revocation fix), and it passes locally against
     # the 0.29.0 wheel (313 passed, 2 skipped). Nothing here uses their
     # additions.
-    "ontodag>=0.16.0,<0.31.0",
+    # <0.32.0 on this branch, to be confirmed by ontodag's release gate
+    # (job `downstream`) against the 0.31.0 candidate before it is merged.
+    "ontodag>=0.31.0,<0.32.0",
     # 0.8.0: read_reference/reference_size, the public raw-ref reads.
     # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —
     # `odag-fs mount` goes through it (read-only policy, errno mapping,
