@@ -58,7 +58,10 @@ REGISTRY_MAJOR = "4"
 # what the same filings store, change only with the registry MINOR. Also in
 # our favour, and the signal that matters most here, since paths are made of
 # names: a registry minor bump is where a directory name may move (the
-# canonical-name tests below catch it either way). G1–G7 are unchanged.
+# canonical-name tests below catch it either way). It also adds G9: replays
+# (merge, sync, load, ingest) are order-free, and single writes are checked
+# as they come — this repo files by single puts, in an order it controls.
+# G1–G7 are unchanged.
 CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4", "0.5")
 
 
