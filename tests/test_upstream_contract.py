@@ -62,7 +62,14 @@ REGISTRY_MAJOR = "4"
 # (merge, sync, load, ingest) are order-free, and single writes are checked
 # as they come — this repo files by single puts, in an order it controls.
 # G1–G7 are unchanged.
-CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4", "0.5")
+# Contract 0.6 (ontodag 2026-10-10): a merge, a sync or a load files an item
+# under the meet of its overlapping values of one head, as `put` does, so
+# G1 holds across merges; G5 states one exception, values a merge left that
+# cannot all hold (listed by `odag status`). This repo files by single puts
+# and never merges; in a store a merge folded, the item shows under the
+# meet's directory and every query that found it still does (G2, G7). The
+# stored forms of merged stores change with the registry minor (4.4, G8).
+CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6")
 
 
 class TestCompatibilitySignals:
