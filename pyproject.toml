@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontodag-fs"
-version = "0.6.4"
+version = "0.7.0"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
@@ -20,7 +20,7 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    # 0.31.0 is the floor on this branch, a *use*: `odag-fs` opens stores
+    # 0.31.0 is the floor since 0.7.0, a *use*: `odag-fs` opens stores
     # through ontodag's public `ontodag.settings` and `ontodag.stores`, and
     # reads typed path components with `OntoDAG.parse_term`, all public since
     # 0.31 (ontodag issue #13), where it reached into ontodag's CLI module.
@@ -68,8 +68,9 @@ dependencies = [
     # shares; the ontodag.act revocation fix), and it passes locally against
     # the 0.29.0 wheel (313 passed, 2 skipped). Nothing here uses their
     # additions.
-    # <0.32.0 on this branch, to be confirmed by ontodag's release gate
-    # (job `downstream`) against the 0.31.0 candidate before it is merged.
+    # <0.32.0 since 0.7.0: ontodag 0.31.0's release gate (job `downstream`)
+    # ran main green against the candidate, and this branch passed against
+    # ontodag's main before it was merged (311 passed, 2 skipped).
     "ontodag>=0.31.0,<0.32.0",
     # 0.8.0: read_reference/reference_size, the public raw-ref reads.
     # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —

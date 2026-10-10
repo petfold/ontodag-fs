@@ -27,6 +27,27 @@ changed, when" index.
   names are gone with them. Floor `ontodag>=0.31.0`, ceiling `<0.32.0`,
   to be confirmed by ontodag's release gate. Contract 0.6 accepted.
 
+## [0.7.0] — 2026-10-10
+
+### Changed
+
+- **Stores and settings through ontodag's public layer; floor
+  `ontodag>=0.31.0`, ceiling `<0.32.0`.** `odag-fs` opened stores and read
+  the settings through ontodag's CLI module (`_make_backend`,
+  `_read_config`, `_resolve_store`, the settings table) and probed the
+  private `_parse_parametric`. ontodag 0.31 makes all of it public
+  (`ontodag.settings`, `ontodag.stores.make_backend`, `OntoDAG.parse_term`;
+  its issue #13), and this release uses those; the two tests that guarded
+  the private names go. ontodag 0.31.0's release gate ran this suite green
+  against the candidate.
+- **The upstream contract pin accepts ontodag's contracts 0.5 and 0.6**:
+  G8 (a spelling or a stored form changes only with the registry minor),
+  G9 (replays are order-free), and a merge filing an item at the meet of
+  its values. This repository files by single puts and never merges, so
+  answers only grow.
+- **CI lints with pyflakes 3.4.0**, before the release build too; one
+  finding fixed.
+
 ## [0.6.4] — 2026-10-07
 
 ### Changed
