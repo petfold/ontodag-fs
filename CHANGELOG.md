@@ -16,16 +16,13 @@ changed, when" index.
 
 ### Changed
 
-- **ontodag's public layer instead of its CLI's private helpers (needs
-  ontodag 0.31).** `odag-fs` opens stores through `ontodag.settings`
-  (`read_config`, `resolve_store`, `normalize_spec`, `write_config`,
-  `SETTINGS`) and `ontodag.stores.make_backend`, and reads typed path
-  components with `OntoDAG.parse_term`, all public since ontodag 0.31
-  (its issue #13); before, it imported `_make_backend`, `_read_config`,
-  `_resolve_store` and the settings table from `ontodag.__main__` and
-  probed `_parse_parametric`. The two tests that guarded those private
-  names are gone with them. Floor `ontodag>=0.31.0`, ceiling `<0.32.0`,
-  to be confirmed by ontodag's release gate. Contract 0.6 accepted.
+- **With ontodag 0.32: places are rectangles.** ontodag's registry 5.0 makes
+  `geo` a rectangle head and refuses geohash cells, so a geo directory is
+  named by its bounds, `/geo(48.85..48.87,2.28..2.30)`, and a square typed
+  in a path, `/geo(48.8584,2.2945+-500m)`, resolves to it; nothing here
+  changed to allow it. The upstream contract pin accepts registry major 5
+  and contract 0.7 (the rectangle kind); the docs' geohash examples are
+  rectangles now.
 
 ## [0.7.0] — 2026-10-10
 

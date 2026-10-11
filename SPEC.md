@@ -36,7 +36,7 @@ Anything not listed here is out of scope (see ROADMAP.md).
 - **Typed values (2026-07-31; OntoDAG-backed index only, ontodag ≥ 0.4.0).**
   A component of the form `head(param)` whose head is a *declared dimension*
   in the DAG is a single attribute constraint whose subsumption is computed
-  from the name (`weight(..5kg)`, `geo(u2ed)`). Contract extensions, all
+  from the name (`weight(..5kg)`, `geo(48.85..48.87,2.28..2.30)`). Contract extensions, all
   confined to `OntoDAGIndex`:
   - *Sugar on lookup:* the closure holds the canonical name
     (`weight(3000g)` → `weight(3kg)`, `weight(4.5kg)` → `weight(9/2kg)`); the

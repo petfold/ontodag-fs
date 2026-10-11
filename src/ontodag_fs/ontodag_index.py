@@ -36,7 +36,7 @@ class OntoDAGIndex:
 
     # ---------------------------------------------------------- dimensions
     #
-    # Parametric terms (weight(..5kg), geo(u2ed)) are single attribute
+    # Parametric terms (weight(..5kg), geo(48.85..48.87,2.28..2.30)) are single attribute
     # constraints whose subsumption is computed from the name —
     # ROADMAP § "Upstream: ontodag dimension lattices". A term of a declared
     # dimension is a valid attribute even when no node exists (a VIRTUAL

@@ -38,7 +38,15 @@ from ontodag.dag import OntoDAG
 
 # What this repo was built and tested against. Update deliberately, with the
 # canonical-name tests re-checked — not to make a red suite green.
-REGISTRY_MAJOR = "4"
+# Registry 5.0 (ontodag 0.32, 2026-10-11) makes `geo` a rectangle head and
+# refuses geohash cells: a geo directory is now named by its bounds,
+# `/geo(48.85..48.87,2.28..2.30)`, and a square typed in a path,
+# `/geo(48.8584,2.2945+-500m)`, resolves to it. Reviewed against ontodag
+# main: the canonical-name tests pass unchanged (they declare their own
+# prefix head), and rectangle paths list and resolve. Both majors are
+# accepted while this main is tested against the 0.32 candidate but still
+# installs 0.31 from PyPI; the floor's rise to 0.32 leaves "5" alone.
+REGISTRY_MAJORS = ("4", "5")
 # Every contract version the declared ontodag range can install, each one
 # reviewed against what this repo relies on. 0.2 (2026-10-06) states what an
 # arrow means — a name is a class of items, which is the reading concept
@@ -70,7 +78,10 @@ REGISTRY_MAJOR = "4"
 # and never merges; in a store a merge folded, the item shows under the
 # meet's directory and every query that found it still does (G2, G7). The
 # stored forms of merged stores change with the registry minor (4.4, G8).
-CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6")
+# Contract 0.7 (ontodag 0.32, 2026-10-11) adds the rectangle kind and its
+# half-circle rule (a stored longitude arc is under half the circle or all
+# of it); G1–G9 are unchanged, and this repo declares no geo head.
+CONTRACT_VERSIONS = ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7")
 
 
 class TestCompatibilitySignals:
@@ -81,11 +92,12 @@ class TestCompatibilitySignals:
         from ontodag.dimensions import REGISTRY_VERSION
 
         major = REGISTRY_VERSION.split(".")[0]
-        assert major == REGISTRY_MAJOR, (
+        assert major in REGISTRY_MAJORS, (
             f"ontodag's unit registry is {REGISTRY_VERSION}, this repo was built "
-            f"against {REGISTRY_MAJOR}.x. Canonical value names may have changed: "
-            f"re-check tests/test_dimensions.py, the examples in SPEC.md §1 and "
-            f"docs/USER_GUIDE.md, then move REGISTRY_MAJOR here."
+            f"against {', '.join(m + '.x' for m in REGISTRY_MAJORS)}. Canonical "
+            f"value names may have changed: re-check tests/test_dimensions.py, "
+            f"the examples in SPEC.md §1 and docs/USER_GUIDE.md, then add the "
+            f"major here."
         )
 
     def test_contract_version_is_the_one_we_built_against(self):

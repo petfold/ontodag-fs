@@ -560,7 +560,8 @@ Four things to know (quote the parentheses in a shell):
   `/weight/weight(..5kg)` is the same place as `/weight(..5kg)`.
 
 This needs the OntoDAG-backed index (the default when you build on a real
-DAG); geo prefixes (`/geo(u2)`) and fits-inside sizes work the same way.
+DAG); places (`/geo(48.85..48.87,2.28..2.30)`, or `/geo(48.8584,2.2945+-500m)`
+for a square around a point) and fits-inside sizes work the same way.
 
 ### Browsing an earlier version
 

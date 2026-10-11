@@ -43,8 +43,9 @@ The lattice can also carry **typed values**, and then paths can query them:
 `ls '/parcel/weight(..5kg)/.all'` lists everything filed at 3 kg, 4.5 kg, … —
 a *virtual* directory that exists for any well-formed bound without anyone
 creating it, computed exactly (rational arithmetic, no floats, nothing
-rounded). Friendly units resolve (`weight(3kg)` ≡ `weight(3000g)`); geohash
-prefixes (`/geo(u2)`) and fits-inside sizes work the same way. See User
+rounded). Friendly units resolve (`weight(3kg)` ≡ `weight(3000g)`); places
+(`/geo(48.85..48.87,2.28..2.30)`, or `/geo(48.8584,2.2945+-500m)` for a
+square around a point) and fits-inside sizes work the same way. See User
 Guide §"Typed values in paths".
 
 ## The ideas in five lines
