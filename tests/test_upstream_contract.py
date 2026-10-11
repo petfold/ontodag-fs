@@ -43,10 +43,9 @@ from ontodag.dag import OntoDAG
 # `/geo(48.85..48.87,2.28..2.30)`, and a square typed in a path,
 # `/geo(48.8584,2.2945+-500m)`, resolves to it. Reviewed against ontodag
 # main: the canonical-name tests pass unchanged (they declare their own
-# prefix head), and rectangle paths list and resolve. Both majors are
-# accepted while this main is tested against the 0.32 candidate but still
-# installs 0.31 from PyPI; the floor's rise to 0.32 leaves "5" alone.
-REGISTRY_MAJORS = ("4", "5")
+# prefix head), and rectangle paths list and resolve. The floor is 0.32, so
+# 5 is the one major the declared range installs.
+REGISTRY_MAJORS = ("5",)
 # Every contract version the declared ontodag range can install, each one
 # reviewed against what this repo relies on. 0.2 (2026-10-06) states what an
 # arrow means — a name is a class of items, which is the reading concept

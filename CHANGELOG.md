@@ -12,17 +12,19 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
-## [Unreleased]
+## [0.8.0] — 2026-10-11
 
 ### Changed
 
+- **Floor `ontodag>=0.32.0`, ceiling `<0.33.0`.** ontodag 0.32.0's release
+  gate ran this suite green against the candidate.
 - **With ontodag 0.32: places are rectangles.** ontodag's registry 5.0 makes
   `geo` a rectangle head and refuses geohash cells, so a geo directory is
   named by its bounds, `/geo(48.85..48.87,2.28..2.30)`, and a square typed
   in a path, `/geo(48.8584,2.2945+-500m)`, resolves to it; nothing here
   changed to allow it. The upstream contract pin accepts registry major 5
-  and contract 0.7 (the rectangle kind); the docs' geohash examples are
-  rectangles now.
+  (alone, with the floor) and contract 0.7 (the rectangle kind); the docs'
+  geohash examples are rectangles now.
 
 ## [0.7.0] — 2026-10-10
 
