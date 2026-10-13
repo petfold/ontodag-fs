@@ -12,6 +12,15 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.9.0] — 2026-10-14
+
+### Changed
+
+- **Floor `ontodag>=0.33.0`, ceiling `<0.34.0`.** ontodag 0.33.0's release
+  gate ran this suite green against the candidate. Nothing here changes:
+  ontodag 0.33.0 added the folder commands and the organiser page, and
+  removed nothing ontodag-fs uses.
+
 ## [0.8.0] — 2026-10-11
 
 ### Changed
