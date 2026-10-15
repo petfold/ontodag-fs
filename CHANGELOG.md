@@ -12,6 +12,16 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.10.0] — 2026-10-15
+
+### Changed
+
+- **Floor `ontodag>=0.34.0`, ceiling `<0.35.0`.** ontodag 0.34.0's release
+  gate ran this suite green against the candidate. ontodag's registry 6.0
+  writes a role's rectangle bare (`from(48..49,2..3)`); this package
+  declares no role head, so no path it makes changes, and the upstream
+  contract test now accepts registry major 6 alone.
+
 ## [0.9.0] — 2026-10-14
 
 ### Changed
