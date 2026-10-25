@@ -12,6 +12,16 @@ readable. The design *reasoning* lives in
 [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) and stays there; this is the "what
 changed, when" index.
 
+## [0.11.0] — 2026-10-25
+
+### Changed
+
+- **Floor `ontodag>=0.35.0`, ceiling `<0.36.0`.** ontodag 0.35.0's release
+  gate ran this suite green against the candidate. ontodag 0.35 ships core
+  v14 and its packs, keeps no record of a derived term in a record store,
+  and writes canonical form 2; registry 6.0 and contract 0.7 are unchanged,
+  and nothing here changed.
+
 ## [0.10.0] — 2026-10-15
 
 ### Changed

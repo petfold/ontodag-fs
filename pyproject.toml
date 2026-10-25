@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ontodag-fs"
-version = "0.10.0"
+version = "0.11.0"
 description = "Stateless fsspec adapter presenting an OntoDAG concept lattice as a browsable filesystem, with bytes on Ethereum Swarm via swarmfs."
 license = { text = "BSD-3-Clause" }
 requires-python = ">=3.11"
@@ -20,7 +20,9 @@ classifiers = [
 ]
 dependencies = [
     "fsspec",
-    # 0.34.0 is the floor since 0.10.0: registry 6.0, which writes a role's
+    # 0.35.0 is the floor since 0.11.0: the release whose gate ran this
+    # suite (core v14, record stores without term records); registry 6.0 still.
+    # 0.34.0 was the floor from 0.10.0: registry 6.0, which writes a role's
     # rectangle bare (the upstream contract test accepts registry major 6
     # alone).
     # 0.32.0 was the floor from 0.8.0: registry 5.0, whose geo directories
@@ -80,7 +82,10 @@ dependencies = [
     # <0.32.0 since 0.7.0: ontodag 0.31.0's release gate (job `downstream`)
     # ran main green against the candidate, and this branch passed against
     # ontodag's main before it was merged (311 passed, 2 skipped).
-    "ontodag>=0.34.0,<0.35.0",
+    # <0.36.0 since 2026-10-25: the gate ran this suite green against the
+    # 0.35.0 candidate (core v14 and its packs, term-free record stores,
+    # canonical form 2).
+    "ontodag>=0.35.0,<0.36.0",
     # 0.8.0: read_reference/reference_size, the public raw-ref reads.
     # 0.10.1: swarmfs.fuse.mount(fs=...) accepts any fsspec filesystem —
     # `odag-fs mount` goes through it (read-only policy, errno mapping,
